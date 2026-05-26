@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计提平台需求文档</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --warning: #ea4335;
+            --warning-light: #fce8e6;
+            --success: #34a853;
+            --success-light: #e6f4ea;
+            --orange: #f9ab00;
+            --orange-light: #fef7e0;
+            --purple: #9334e6;
+            --purple-light: #f3e8fd;
+            --gray: #5f6368;
+            --gray-light: #f8f9fa;
+            --border: #dadce0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #202124;
+            line-height: 1.8;
+            background: #f8f9fa;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        /* Tab 导航 */
+        .nav {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+        .nav-title { font-weight: 700; font-size: 18px; color: var(--primary); white-space: nowrap; }
+        .tab-link {
+            color: var(--gray) !important;
+            text-decoration: none !important;
+            padding: 8px 18px !important;
+            border-radius: 20px !important;
+            font-size: 14px !important;
+            transition: all 0.2s !important;
+            cursor: pointer !important;
+        }
+        .tab-link:hover { background: var(--primary-light) !important; color: var(--primary) !important; }
+        .tab-link.active { background: var(--primary) !important; color: white !important; font-weight: 600 !important; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 卡片 */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { font-size: 22px; margin-bottom: 16px; color: #202124; }
+        .card h3 { font-size: 18px; margin: 20px 0 12px; color: #333; }
+        .card h4 { font-size: 16px; margin: 16px 0 8px; color: #444; }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 1px 2px;
+        }
+        .tag-pain { background: #fce8e6; color: #c5221f; }
+        .tag-req { background: #e8f0fe; color: #1967d2; }
+        .tag-plan { background: #e6f4ea; color: #137333; }
+        .tag-data { background: #fef7e0; color: #e37400; }
+        .tag-crm { background: #f3e8fd; color: #7627bb; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+        th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+        th { background: var(--gray-light); font-weight: 600; white-space: nowrap; }
+        td { background: white; }
+        tr:hover td { background: #f0f4ff; }
+
+        /* 提示框 */
+        .tip {
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .tip-icon { font-size: 18px; flex-shrink: 0; }
+        .tip-warning { background: #fef7e0; border: 1px solid #fdd663; }
+        .tip-info { background: var(--primary-light); border: 1px solid #aecbfa; }
+        .tip-success { background: var(--success-light); border: 1px solid #a8dab5; }
+        .tip-danger { background: var(--warning-light); border: 1px solid #f5bcb7; }
+
+        /* 泳道图 */
+        .swimlane {
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        .swimlane-header {
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .swimlane-body { padding: 16px 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+        .swimlane-step {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            min-width: 160px;
+            max-width: 220px;
+            background: white;
+            position: relative;
+        }
+        .swimlane-step .step-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+        .swimlane-step .step-desc { color: var(--gray); font-size: 12px; line-height: 1.5; }
+        .swimlane-arrow { display: flex; align-items: center; font-size: 20px; color: var(--gray); padding: 0 4px; }
+
+        /* 痛点卡片 */
+        .pain-card {
+            border: 1px solid #f5bcb7;
+            border-left: 4px solid var(--warning);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: #fffbfb;
+        }
+        .pain-card h4 { color: var(--warning); margin-bottom: 6px; }
+
+        /* 需求卡片 */
+        .req-card {
+            border: 1px solid #aecbfa;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: #f8fbff;
+        }
+        .req-card h4 { color: var(--primary); margin-bottom: 6px; }
+
+        /* 规划卡片 */
+        .plan-card {
+            border: 1px solid #a8dab5;
+            border-left: 4px solid var(--success);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: #f6fcf8;
+        }
+        .plan-card h4 { color: var(--success); margin-bottom: 6px; }
+
+        /* 流程图 */
+        .mermaid { text-align: center; margin: 20px 0; overflow-x: auto; }
+
+        /* 分割线 */
+        .divider { border: none; border-top: 2px dashed var(--border); margin: 32px 0; }
+
+        /* 优先级 */
+        .priority { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .p0 { background: #fce8e6; color: #c5221f; }
+        .p1 { background: #fef7e0; color: #e37400; }
+        .p2 { background: #e8f0fe; color: #1967d2; }
+
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .card { padding: 20px; }
+            .nav { flex-wrap: wrap; }
+            table { font-size: 12px; }
+            .swimlane-body { flex-direction: column; }
+            .swimlane-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Tab 导航 -->
+<div class="nav">
+    <div class="nav-title">计提需求文档</div>
+    <a href="#" class="tab-link active" data-tab="tab-status">计提现状</a>
+    <a href="#" class="tab-link" data-tab="tab-pain">计提痛点</a>
+    <a href="#" class="tab-link" data-tab="tab-plan">计提规划</a>
+    <a href="#" class="tab-link" data-tab="tab-req">计提需求</a>
+</div>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!--                       Tab 1: 计提现状                          -->
+<!-- ============================================================ -->
+<div class="tab-content active" id="tab-status">
+
+<div class="card">
+    <h2>一、计提现状</h2>
+    <p style="color:var(--gray);">当前计提流程涉及多个角色、多个系统，手工操作环节多，每月计提周期紧张。</p>
+</div>
+
+<!-- 业务流程泳道图 -->
+<div class="card">
+    <h2>1.1 当前业务流程全景</h2>
+
+    <!-- 泳道1：配置准备 -->
+    <div class="swimlane">
+        <div class="swimlane-header" style="background:var(--primary-light);color:var(--primary);">
+            📋 阶段一：配置准备（25号-28号）
+        </div>
+        <div class="swimlane-body">
+            <div class="swimlane-step" style="border-color:var(--primary);">
+                <div class="step-title">合同ID确认</div>
+                <div class="step-desc">各业务线运营确认内外媒合同ID</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu/王盼</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--primary);">
+                <div class="step-title">计提文档核对</div>
+                <div class="step-desc">核对【媒体收入分成】【媒体收入拆分配置】【国家媒体计提配置】</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu/ADPM/作战室</span></div>
+                <div style="margin-top:4px;font-size:11px;color:var(--orange);">ADPM核对 1天</div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--primary);">
+                <div class="step-title">配置文件准备</div>
+                <div class="step-desc">Miads和Offline同学准备配置文件</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu/王盼</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--primary);">
+                <div class="step-title">销管同步时间</div>
+                <div class="step-desc">销管同步计提开始&截至时间</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">作战室: 赵赫</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 泳道2：数据导入 -->
+    <div class="swimlane">
+        <div class="swimlane-header" style="background:var(--success-light);color:var(--success);">
+            📊 阶段二：数据导入（28号-29号）
+        </div>
+        <div class="swimlane-body">
+            <div class="swimlane-step" style="border-color:var(--success);">
+                <div class="step-title">数据同步导入</div>
+                <div class="step-desc">同步研发数据导入计提平台，计提系统预估逻辑调整，导数周期改为28天，29号导入数据</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu/数据团队</span></div>
+                <div style="margin-top:4px;font-size:11px;color:var(--orange);">周期T-1，一般数据周期25天(31日/月)，导数0.5天</div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--success);">
+                <div class="step-title">合同抽样校验</div>
+                <div class="step-desc">合同抽样校验金额/媒体拆分</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--success);background:#e6f4ea;">
+                <div class="step-title">开始计提</div>
+                <div class="step-desc">29号中午（31日/月）</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">运营: ziyu</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 泳道3：计提执行 -->
+    <div class="swimlane">
+        <div class="swimlane-header" style="background:var(--orange-light);color:#e37400;">
+            ⚙️ 阶段三：计提执行（29号-30号）
+        </div>
+        <div class="swimlane-body">
+            <div class="swimlane-step" style="border-color:var(--orange);">
+                <div class="step-title">计提平台计算</div>
+                <div class="step-desc">计提平台执行核心替换逻辑：媒体拆分、国家替换、桌面媒体替换、汇率转换、返点计算</div>
+                <div style="margin-top:6px;"><span class="tag tag-data">计提平台</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--orange);">
+                <div class="step-title">下载计提数据</div>
+                <div class="step-desc">下载【miads计提】和【offline计提】手动组合校准</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">各业务线运营</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--orange);">
+                <div class="step-title">预估收入计提</div>
+                <div class="step-desc">【代理】30日中午前上传&推送<br/>【直客】31日中午前上传&推送</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">各代理/直客客户运营</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 泳道4：赔付与返点 -->
+    <div class="swimlane">
+        <div class="swimlane-header" style="background:var(--warning-light);color:var(--warning);">
+            💰 阶段四：赔付与返点（30号-31号）
+        </div>
+        <div class="swimlane-body">
+            <div class="swimlane-step" style="border-color:var(--warning);">
+                <div class="step-title">oCPC赔付核算</div>
+                <div class="step-desc">作战室从CRM导出已上传的预估收入计提，产品手动进行oCPC赔付计算，以Excel形式呈现扣除后结果</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">作战室: 赵赫 / 产品: 听怡</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--warning);">
+                <div class="step-title">返点计提</div>
+                <div class="step-desc">根据oCPC赔付后的Excel数据，计算返点计提<br/>返点金额 = 销售提供返点系数 × (1-跨地区消耗占比) × (预估收入-oCPC赔付金额-offline消耗金额)</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">各代理客户运营</span></div>
+            </div>
+            <div class="swimlane-arrow">→</div>
+            <div class="swimlane-step" style="border-color:var(--warning);background:#fce8e6;">
+                <div class="step-title">计提结束</div>
+                <div class="step-desc">31日中午</div>
+                <div style="margin-top:6px;"><span class="tag tag-req">全体</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据流 -->
+<div class="card">
+    <h2>1.2 数据流向</h2>
+    <div class="mermaid">
+graph LR
+    A["CRM合同系统<br/>合同ID/账户/币种"] -->|手动同步| B
+    C["数据团队<br/>消耗数据/激活数据"] -->|导入| B
+    D["配置文件<br/>媒体替换/国家替换/拆分"] -->|人工上传| B
+    E["作战室<br/>返点比例"] -->|Excel| B
+
+    B["计提平台 config_miads<br/>━━━━━━━━━━━━━━━━<br/>计提平台进行的核心计算：<br/>· 媒体替换<br/>· 广告位替换<br/>· 收入分成（MSA拆分）<br/>· 国家替换<br/>· 汇率转换<br/>· 预估收入计算<br/>· 返点计算"]
+
+    B -->|计算| F["计提结果<br/>预估收入/计提金额"]
+    F -->|下载Excel| G["运营手动上传<br/>CRM/SRM"]
+    G -->|推送| H["财务系统"]
+
+    style A fill:#f3e8fd,stroke:#9334e6
+    style C fill:#fef7e0,stroke:#f9ab00
+    style D fill:#e8f0fe,stroke:#1a73e8
+    style E fill:#fce8e6,stroke:#ea4335
+    style B fill:#e6f4ea,stroke:#34a853
+    style H fill:#f8f9fa,stroke:#dadce0
+    </div>
+
+    <div class="tip tip-warning">
+        <span class="tip-icon">⚠️</span>
+        <div><strong>当前问题：</strong>计提平台承担了大量计算逻辑（媒体替换、广告位替换、收入分成、汇率转换、预估收入计算、返点计算），且配置文件需要人工维护。优化后这些计算将转移到<strong>数据侧</strong>完成，CRM只需确认和推送。</div>
+    </div>
+</div>
+
+<!-- 关键时间节点 -->
+<div class="card">
+    <h2>1.3 关键时间节点</h2>
+    <table>
+        <tr><th>时间</th><th>动作</th><th>负责方</th></tr>
+        <tr><td>25号</td><td>合同ID确认、配置文件准备开始</td><td>各业务线运营</td></tr>
+        <tr><td>26-27号</td><td>配置文件核对（ADPM核对1天）</td><td>ADPM/作战室</td></tr>
+        <tr><td>28号</td><td>数据导入计提平台（导数0.5天）</td><td>数据团队</td></tr>
+        <tr><td>29号中午</td><td>开始计提（导数周期改为28天）</td><td>运营</td></tr>
+        <tr><td>30号中午</td><td>【代理】预估收入计提上传&推送</td><td>代理客户运营</td></tr>
+        <tr><td>31号中午</td><td>【直客】预估收入计提上传&推送<br/>返点计提上传&推送<br/>计提结束</td><td>直客客户运营</td></tr>
+    </table>
+</div>
+
+<!-- 涉及角色 -->
+<div class="card">
+    <h2>1.4 涉及角色</h2>
+    <table>
+        <tr><th>角色</th><th>职责</th></tr>
+        <tr><td>各业务线运营</td><td>合同ID确认、计提数据下载校准</td></tr>
+        <tr><td>运营 (ziyu/王盼)</td><td>配置文件准备、计提文档核对</td></tr>
+        <tr><td>ADPM</td><td>配置文件核对（1天）</td></tr>
+        <tr><td>作战室 (赵赫)</td><td>销管时间同步、oCPC赔付核算</td></tr>
+        <tr><td>数据团队</td><td>数据导入计提平台</td></tr>
+        <tr><td>产品 (听怡)</td><td>oCPC赔付计算</td></tr>
+        <tr><td>代理客户运营</td><td>代理预估收入计提、返点计提</td></tr>
+        <tr><td>直客客户运营</td><td>直客预估收入计提</td></tr>
+    </table>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!--                       Tab 2: 计提痛点                          -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab-pain">
+
+<div class="card">
+    <h2>二、计提痛点</h2>
+    <p style="color:var(--gray);">当前计提流程存在以下核心问题，影响效率和数据准确性。</p>
+</div>
+
+<!-- 痛点1 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点1</span> 合同信息需要手动确认</h4>
+        <p><strong>现状：</strong>每次计提前，各业务线运营需要手动确认内外媒合同ID，再由运营同学维护到计提平台的配置文件中。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>CRM系统已有完整的合同数据（合同ID、账户ID、结算币种、二级DSP等），但计提平台需要人工搬运</li>
+            <li>每月重复操作，容易遗漏或出错</li>
+            <li>合同变更（新增/终止）时，计提平台配置文件可能不同步</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>能否直接从CRM合同系统获取合同数据，不需要计提平台维护配置文件？</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点2 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点2</span> 配置文件与驾驶舱数据重复维护</h4>
+        <p><strong>现状：</strong>计提平台需要维护媒体收入拆分、国家媒体替换等配置文件（7000+条），但驾驶舱数据中已有一份相同的替换规则。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>同一份替换规则在两个系统中各维护一份，容易不一致</li>
+            <li>每月手动上传 7000+ 条媒体替换规则，工作量大</li>
+            <li>98.8% 的媒体替换都是同一个目标（海外联盟业务-SDK），规则高度重复</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>能否在数据给出数据时就做好替换，直接给到最终的计提数据？不需要计提平台做这些替换，还能保证各方数据一致。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点3 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点3</span> 预估计算逻辑不灵活</h4>
+        <p><strong>现状：</strong>所有业务共用同一套预估收入计算公式 <code>exDspFee = dspFee / accrualPeriod × dayByMonth</code>，计提周期也统一。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>不同业务场景可能需要不同的计算逻辑（如CPS不用日均推算）</li>
+            <li>不同业务的计提周期可能不同（有的25天，有的28天）</li>
+            <li>当前公式硬编码，新增业务场景需要改代码</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>每个业务可以自定义配置计提周期和计算公式。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点4 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点4</span> 计提操作步骤多、耗时长</h4>
+        <p><strong>现状：</strong>开始计提后，用户需要在计提平台操作三步（Step1 → Step2 → Step3），每步等待后端计算。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>三步操作，四次点击，体感慢</li>
+            <li>Step1 的计算结果不被后续步骤直接使用（Step2 重新查库重算），但用户修改会传递</li>
+            <li>用户在中间步骤修改预计收入时，看不到最终结果</li>
+            <li>从开始计提到最终保存，整个链路耗时较长</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>开始计提后，能否直接给出一份可用的数据，不需要用户逐步操作？</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点5 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点5</span> 赔付计提和返点计提全手工</h4>
+        <p><strong>现状：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li><strong>返点计提：</strong>返点配置文件当前没有实际使用，实际用的是作战室给的返点比例（数据侧提供），需要人工计算</li>
+            <li><strong>赔付计提：</strong>作战室从CRM导出预估收入计提，产品手动进行oCPC赔付计算，以Excel形式呈现</li>
+            <li>返点金额 = 销售提供返点系数 × (1-跨地区消耗占比) × (预估收入-oCPC赔付金额-offline消耗金额)</li>
+        </ul>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>返点比例来自数据侧，但计提平台没有直接对接，需要通过作战室人工传递</li>
+            <li>赔付数据在miads平台已计算，但没有直接用于计提，需要手动核算</li>
+            <li>整个赔付+返点流程全手工，容易出错且耗时</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong><br>
+            • 返点：数据给出数据时，把对应的返点比例、返点金额直接给到，人工只需要微调。作战室不需要参与计提前面的步骤<br>
+            • 赔付：作为独立链路从miads平台单独计提。数据给出的计提数据需要把赔付相关数据指出或剔除（因为返点可能不包含赔付消耗）。后续赔付换成虚拟金后可完全剥离</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点6 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点6</span> 数据源单一，不支持多数据源</h4>
+        <p><strong>现状：</strong>程序化计提的部分数据来自我方计算，部分来自对方API，当前系统不支持灵活的多数据源接入。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>不同DSP的数据来源不同（有的自有系统，有的第三方API）</li>
+            <li>当前系统假设数据都在同一张表里，不支持多源合并</li>
+            <li>新增数据源时需要改代码</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>数据侧需要支持多数据源，能够灵活接入不同来源的数据。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点7 -->
+<div class="card">
+    <div class="pain-card">
+        <h4><span class="tag tag-pain">痛点7</span> 数据更新不够及时</h4>
+        <p><strong>现状：</strong>数据团队在28-29号一次性导入数据，导数周期为T-1（一般25天数据）。</p>
+        <p><strong>问题：</strong></p>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>期望的预估收入计算公式：<code>前X天收入 + (X-2或X-7)内平均值 × (当月天数-X)</code></li>
+            <li>这个公式需要每天的数据作为输入，而不是月底一次性导入</li>
+            <li>当前一次性导入无法支持这种滚动计算</li>
+        </ul>
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div><strong>期望：</strong>数据侧支持每天自动更新计提数据，需要保留每天的数据明细。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 痛点汇总 -->
+<div class="card">
+    <h2>痛点汇总</h2>
+    <table>
+        <tr><th>#</th><th>痛点</th><th>影响</th><th>涉及方</th></tr>
+        <tr><td>1</td><td>合同信息手动确认</td><td>每月重复操作，容易遗漏</td><td>运营 + CRM</td></tr>
+        <tr><td>2</td><td>配置文件重复维护</td><td>7000+条规则两系统各一份，易不一致</td><td>运营 + 数据</td></tr>
+        <tr><td>3</td><td>计算逻辑不灵活</td><td>不同业务无法自定义公式和周期</td><td>计提平台</td></tr>
+        <tr><td>4</td><td>操作步骤多</td><td>三步操作，体感慢</td><td>计提平台</td></tr>
+        <tr><td>5</td><td>赔付/返点全手工</td><td>人工计算易出错，耗时；作战室参与前置步骤</td><td>作战室 + 产品 + 运营 + 数据</td></tr>
+        <tr><td>6</td><td>不支持多数据源</td><td>新增数据源需改代码</td><td>数据 + 计提平台</td></tr>
+        <tr><td>7</td><td>数据更新不及时</td><td>月底一次性导入，无法支持滚动计算</td><td>数据</td></tr>
+    </table>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!--                       Tab 3: 计提规划                          -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab-plan">
+
+<div class="card">
+    <h2>三、计提规划</h2>
+    <p style="color:var(--gray);">未来规划：合同信息从CRM同步，在CRM中新增计提模块，与当前计提并行1-2个月验证数据。</p>
+</div>
+
+<!-- 规划全景 -->
+<div class="card">
+    <h2>3.1 目标架构</h2>
+    <div class="mermaid">
+graph TD
+    subgraph CRM ["CRM系统"]
+        A["合同管理<br/>合同ID/账户/币种/结算方式<br/>标记是否需要计提"]
+        B["汇率配置"]
+        C["计提结果确认<br/>人工调整（可选）"]
+        D["推送财务系统"]
+    end
+
+    subgraph Data ["数据侧（核心）"]
+        G["每日数据更新<br/>激活/点击/消耗"]
+        H["多数据源接入<br/>自有系统 + 第三方API"]
+        I["拉取CRM合同数据<br/>替换合同信息"]
+        J["数据预处理<br/>媒体/广告位替换<br/>国家替换<br/>MSA收入分成<br/>返点系数计算"]
+        K["计提数据输出<br/>4大类 × 媒体×国家×账户×日"]
+    end
+
+    A -->|合同信息 + 是否计提标记| I
+    G --> J
+    H --> J
+    I --> J
+    J --> K
+    K -->|收入计提数据| C
+    K -->|成本计提数据| C
+    K -->|返点计提数据| C
+    K -->|赔付计提数据| C
+    B -->|汇率| C
+    C --> D
+
+    style CRM fill:#f3e8fd,stroke:#9334e6
+    style Data fill:#fef7e0,stroke:#f9ab00
+    </div>
+
+    <div class="tip tip-info">
+        <span class="tip-icon">💡</span>
+        <div>
+            <strong>关键设计：</strong><br>
+            • <strong>数据侧拉取CRM合同数据</strong>，直接替换好合同信息后输出，结果可以直接用<br>
+            • CRM只负责<strong>管理合同是否要计提</strong>（标记），无特殊标记的数据统一处理<br>
+            • 数据侧输出<strong>4大类计提数据</strong>：收入计提、成本计提、返点计提、赔付计提<br>
+            • 所有类型维度一致（媒体×国家×账户×日），成本计提额外需要成本+收入对应信息<br>
+            • 作战室不参与前置步骤，赔付作为独立链路
+        </div>
+    </div>
+</div>
+
+<!-- 规划要点 -->
+<div class="card">
+    <h2>3.2 核心规划要点</h2>
+
+    <div class="plan-card">
+        <h4>1. 数据侧为核心，拉取CRM合同数据</h4>
+        <p>数据侧直接从CRM拉取合同数据，替换好合同信息后输出。CRM只负责<strong>管理合同是否需要计提</strong>（标记），无特殊标记的数据统一处理。</p>
+        <p><strong>收益：</strong>数据侧输出的结果<strong>可以直接用</strong>，不需要再做二次处理。消除每月手动上传合同配置的工作。</p>
+    </div>
+
+    <div class="plan-card">
+        <h4>2. CRM中新增计提模块</h4>
+        <p>在CRM系统中新增计提功能模块，与当前计提平台<strong>并行运行1-2个月</strong>，对比验证数据准确性。</p>
+        <p><strong>CRM模块职责：</strong>接收数据侧结果 → 人工调整（可选）→ 推送财务系统。不需要再做计算逻辑。</p>
+    </div>
+
+    <div class="plan-card">
+        <h4>3. 数据输出4大类计提数据</h4>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li><strong>收入计提数据</strong>：预估收入相关</li>
+            <li><strong>成本计提数据</strong>：成本相关（需关联收入信息）</li>
+            <li><strong>返点计提数据</strong>：返点相关（数据侧直接计算）</li>
+            <li><strong>赔付计提数据</strong>：赔付相关（独立链路，后续可换虚拟金剥离）</li>
+        </ul>
+        <p>所有类型维度一致（媒体×国家×账户×日），支持tagid、包名等更细粒度。</p>
+    </div>
+
+    <div class="plan-card">
+        <h4>4. 数据每天提供，支持自定义配置</h4>
+        <ul style="padding-left:20px;margin:8px 0;">
+            <li>数据侧<strong>每天自动更新</strong>计提数据，保留每天的数据明细</li>
+            <li>每个业务可以<strong>自定义计提周期和计算公式</strong>（配置在CRM，数据侧使用）</li>
+            <li>支持期望公式：<code>前X天收入 + (X-2或X-7)内平均值 × (当月天数-X)</code></li>
+        </ul>
+    </div>
+
+    <div class="plan-card">
+        <h4>5. 数据预处理在数据侧完成</h4>
+        <p>媒体拆分、国家替换、桌面媒体替换、返点系数等，都在<strong>数据给出数据时做好</strong>。作战室不参与前置步骤。</p>
+        <p><strong>收益：</strong>消除计提平台的7000+条配置维护，保证各方数据一致。</p>
+    </div>
+
+    <div class="plan-card">
+        <h4>6. 自动推送财务系统</h4>
+        <p>如果不需要人为调整，系统<strong>可以直接推送到财务系统</strong>，不需要人工操作。</p>
+    </div>
+
+    <div class="plan-card">
+        <h4>7. 汇率配置调整到CRM</h4>
+        <p>当前汇率配置在计提平台，规划调整到CRM中统一管理。</p>
+    </div>
+</div>
+
+<!-- 迁移路径 -->
+<div class="card">
+    <h2>3.3 迁移路径</h2>
+    <div class="mermaid">
+graph LR
+    A["Phase 1<br/>并行验证<br/>1-2个月"] --> B["Phase 2<br/>数据对比<br/>确认准确"]
+    B --> C["Phase 3<br/>切换上线<br/>计提平台退役"]
+
+    style A fill:#fef7e0,stroke:#f9ab00
+    style B fill:#e8f0fe,stroke:#1a73e8
+    style C fill:#e6f4ea,stroke:#34a853
+    </div>
+
+    <table>
+        <tr><th>阶段</th><th>内容</th><th>周期</th></tr>
+        <tr><td>Phase 1</td><td>CRM计提模块上线，与计提平台并行运行，同一份数据两边计算</td><td>1-2个月</td></tr>
+        <tr><td>Phase 2</td><td>对比两个系统的结果差异，确认数据准确，修复差异</td><td>2-4周</td></tr>
+        <tr><td>Phase 3</td><td>确认无误后，切换到CRM计提模块，计提平台退役</td><td>1周</td></tr>
+    </table>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!--                       Tab 4: 计提需求                          -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab-req">
+
+<div class="card">
+    <h2>四、计提需求</h2>
+    <p style="color:var(--gray);">基于现状和规划，梳理对数据侧和CRM的具体需求点。</p>
+</div>
+
+<!-- 大流程图 -->
+<div class="card">
+    <h2>4.1 目标业务流程（优化后）</h2>
+    <div class="mermaid">
+graph TD
+    subgraph Phase1 ["阶段一：数据准备（数据侧 — 核心）"]
+        A1["每日自动更新<br/>激活/点击/消耗<br/>多数据源接入"]
+        A2["拉取CRM合同数据<br/>替换合同信息<br/>（合同ID/账户/币种等）"]
+        A3["数据预处理<br/>媒体/广告位替换<br/>国家替换<br/>MSA收入分成<br/>返点系数计算"]
+        A4["输出4大类计提数据<br/>收入/成本/返点/赔付<br/>媒体×国家×账户×日"]
+    end
+
+    subgraph Phase2 ["阶段二：合同管理（CRM）"]
+        B1["合同管理<br/>标记是否需要计提<br/>无特殊标记统一处理"]
+        B2["汇率配置"]
+        B3["各业务计提周期<br/>和计算公式配置"]
+    end
+
+    subgraph Phase3 ["阶段三：确认与推送（CRM）"]
+        C1["接收数据侧计提数据"]
+        C2{"需要人工调整？"}
+        C2 -->|否| C3["系统自动推送财务系统"]
+        C2 -->|是| C4["运营确认/微调"]
+        C4 --> C5["推送财务系统"]
+    end
+
+    A1 --> A3
+    B1 -->|合同信息+计提标记| A2
+    A2 --> A3
+    A3 --> A4
+    A4 -->|收入计提| C1
+    A4 -->|成本计提| C1
+    A4 -->|返点计提| C1
+    A4 -->|赔付计提| C1
+    B2 --> C1
+    B3 --> C1
+    C1 --> C2
+
+    style Phase1 fill:#fef7e0,stroke:#f9ab00
+    style Phase2 fill:#f3e8fd,stroke:#9334e6
+    style Phase3 fill:#e6f4ea,stroke:#34a853
+    </div>
+</div>
+
+<!-- 对数据侧的需求 -->
+<div class="card">
+    <h2>4.2 对数据侧的需求</h2>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 D1：支持多数据源接入</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>程序化计提的部分数据来自我方计算，部分来自对方API，当前系统不支持</td></tr>
+            <tr><td>需求</td><td>数据侧需要支持多数据源，能够灵活接入不同来源的数据（自有系统 + 第三方API），合并后输出统一格式</td></tr>
+            <tr><td>验收标准</td><td>能够同时接入≥2个数据源，合并后的数据格式统一，字段完整</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 D2：每天自动更新计提数据</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>期望公式：前X天收入 + (X-2或X-7)内平均值 × (当月天数-X)，需要每天的数据</td></tr>
+            <tr><td>需求</td><td>数据侧支持每天自动更新计提数据，保留每天的数据明细（dt维度），支持按天查询</td></tr>
+            <tr><td>验收标准</td><td>每天凌晨自动更新前一天的数据；数据表支持按dt查询；历史数据保留≥3个月</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 D3：拉取CRM合同数据 + 数据预处理</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>当前计提平台维护7000+条媒体替换规则，且需要人工搬运合同信息</td></tr>
+            <tr><td>需求</td><td>
+                • <strong>拉取CRM合同数据</strong>：数据侧直接从CRM获取合同信息（合同ID、账户ID、结算币种、二级DSP等），替换好后输出<br>
+                • <strong>媒体/广告位替换</strong>：媒体名和广告位的映射替换<br>
+                • <strong>国家替换</strong>：国家编码映射<br>
+                • <strong>MSA收入分成</strong>：MSA按比例拆分到子媒体<br>
+                • <strong>返点系数</strong>：返点比例由数据侧直接计算（作战室的数据也来源于数据，不再需要作战室参与）<br>
+                • <strong>CRM标记是否计提</strong>：CRM管理合同是否需要计提，无特殊标记的数据统一处理
+            </td></tr>
+            <tr><td>验收标准</td><td>输出数据已替换好合同信息；替换规则与驾驶舱一致；返点系数已计算；仅输出需要计提的合同数据</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 D4：计提数据输出（4大类）</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>CRM计提模块需要多类型数据输入，不只是收入计提</td></tr>
+            <tr><td>需求</td><td>数据侧输出<strong>4大类计提数据</strong>，所有类型维度一致（媒体×国家×账户×日），成本计提额外需要成本+收入对应信息。所有金额以<strong>美金</strong>为单位。</td></tr>
+            <tr><td colspan="2">
+                <strong>数据类型：</strong>
+                <table style="margin:8px 0;">
+                    <tr><th>类型</th><th>说明</th></tr>
+                    <tr><td>收入计提数据</td><td>预估收入相关（曝光/点击/消耗/预估收入等）</td></tr>
+                    <tr><td>成本计提数据</td><td>成本相关（消耗/成本/预估成本等，需关联收入信息）</td></tr>
+                    <tr><td>返点计提数据</td><td>返点相关（返点比例/返点金额/返点后消耗等）</td></tr>
+                    <tr><td>赔付计提数据</td><td>赔付相关（赔付金额/赔付后消耗等，独立链路）</td></tr>
+                </table>
+                <strong>通用字段（所有类型共享）：</strong>
+                <table style="margin:8px 0;">
+                    <tr><th>字段</th><th>说明</th></tr>
+                    <tr><td>tag_id</td><td>广告位ID（细粒度）</td></tr>
+                    <tr><td>package_name</td><td>包名（细粒度）</td></tr>
+                    <tr><td>media</td><td>媒体（替换后）</td></tr>
+                    <tr><td>region</td><td>国家（替换后）</td></tr>
+                    <tr><td>account_id</td><td>账户ID</td></tr>
+                    <tr><td>contract_id</td><td>合同ID（从CRM同步）</td></tr>
+                    <tr><td>settlement_currency</td><td>结算币种（从CRM同步）</td></tr>
+                    <tr><td>dt</td><td>日期（日维度）</td></tr>
+                    <tr><td>accrual_type</td><td>数据类型（收入/成本/返点/赔付）</td></tr>
+                </table>
+                <strong>金额字段：</strong>
+                <table style="margin:8px 0;">
+                    <tr><th>字段</th><th>说明</th></tr>
+                    <tr><td>impressions</td><td>曝光量</td></tr>
+                    <tr><td>clicks</td><td>点击量</td></tr>
+                    <tr><td>cost</td><td>消耗（美金）— 程序化可能有两套数据</td></tr>
+                    <tr><td>estimated_revenue</td><td>预估收入（美金）</td></tr>
+                    <tr><td>rebate_rate</td><td>返点比例</td></tr>
+                    <tr><td>rebate_amount</td><td>返点金额（美金）</td></tr>
+                    <tr><td>cost_after_rebate</td><td>返点扣除后消耗（美金）</td></tr>
+                    <tr><td>compensation_amount</td><td>赔付金额（美金）</td></tr>
+                    <tr><td>cost_after_compensation</td><td>赔付后消耗（美金）</td></tr>
+                    <tr><td>estimated_cost</td><td>预估成本（美金，成本计提用）</td></tr>
+                </table>
+            </td></tr>
+            <tr><td>验收标准</td><td>4大类数据完整输出；字段完整率100%；金额均为美金；粒度支持媒体×国家×账户×日×tagid×包名</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 D5：赔付数据处理</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>赔付数据在miads平台已计算。后续赔付可能换成虚拟金，可以完全剥离。</td></tr>
+            <tr><td>需求</td><td>
+                • 赔付数据从miads平台获取，作为4大类之一独立输出<br>
+                • 计提数据中需要<strong>指出或剔除赔付相关数据</strong>（看业务实际需求），因为返点可能不包含赔付消耗<br>
+                • 赔付作为<strong>独立链路</strong>计提，不影响主计提流程<br>
+                • 预留虚拟金替换接口，后续赔付换成虚拟金时可完全剥离
+            </td></tr>
+            <tr><td>验收标准</td><td>赔付数据与miads平台一致；支持按合同ID/账户维度查询；赔付可独立计提</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p1">P1</span> 需求 D6：数据交付与后链路一致</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>数据交付的计提数据需要和后链路一致，后链路能够支持tagid、包名等更细粒度</td></tr>
+            <tr><td>需求</td><td>数据输出格式与CRM计提模块及后链路系统约定的接口一致，支持向下钻取到tagid、包名粒度。输出的结果<strong>可以直接用</strong>，不需要再做二次处理</td></tr>
+            <tr><td>验收标准</td><td>数据粒度支持媒体×国家×账户×日×tagid×包名；与后链路数据一致；结果可直接用于计提</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- 对CRM的需求 -->
+<div class="card">
+    <h2>4.3 对CRM的需求</h2>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 C1：CRM新增计提模块（确认/调整/推送）</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>规划在CRM中新增计提功能，替代当前计提平台。数据侧已完成大部分计算工作。</td></tr>
+            <tr><td>需求</td><td>CRM新增计提模块，核心功能：<br>
+                • 接收数据侧输出的4大类计提数据（结果可直接用）<br>
+                • 展示计提结果，支持<strong>人工调整</strong>（可选）<br>
+                • <strong>推送财务系统</strong><br>
+                • 不需要再做计算逻辑（数据侧已完成）
+            </td></tr>
+            <tr><td>验收标准</td><td>模块上线后能接收数据侧结果并推送；与计提平台并行运行1-2个月数据一致</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 C2：合同管理（标记是否需要计提）</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>CRM已有完整合同数据，数据侧需要拉取</td></tr>
+            <tr><td>需求</td><td>CRM管理合同是否需要计提（标记），<strong>无特殊标记的数据统一处理</strong>。数据侧拉取CRM合同数据，替换好合同信息后输出</td></tr>
+            <tr><td>验收标准</td><td>合同计提标记功能可用；数据侧能拉取到标记后的合同数据</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 C3：汇率配置</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>当前汇率在计提平台配置，规划调整到CRM</td></tr>
+            <tr><td>需求</td><td>CRM中管理汇率配置，支持按币种设置汇率，支持历史汇率查询</td></tr>
+            <tr><td>验收标准</td><td>汇率配置在CRM中可维护</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 C4：各业务计提周期和计算公式配置</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>不同业务需要不同的计提周期和计算逻辑</td></tr>
+            <tr><td>需求</td><td>每个业务线可以自定义配置：<br>
+                • <strong>计提周期</strong>（如25天、28天、30天）<br>
+                • <strong>预估收入计算公式</strong>（如日均推算、月度比例、自定义表达式）<br>
+                • 期望公式：<code>前X天收入 + (X-2或X-7)内平均值 × (当月天数-X)</code><br>
+                注：此配置供数据侧使用，数据侧根据配置计算后输出最终结果
+            </td></tr>
+            <tr><td>验收标准</td><td>支持≥3种计算公式模板；不同业务线可独立配置；配置后即时生效</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p0">P0</span> 需求 C5：推送财务系统</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>当前需要人工下载Excel再上传到CRM/SRM</td></tr>
+            <tr><td>需求</td><td>计提结果确认后，系统<strong>自动推送财务系统</strong>。如果不需要人为调整，全程无需人工操作</td></tr>
+            <tr><td>验收标准</td><td>推送成功率≥99%；推送失败自动重试+告警；推送记录可追溯</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p1">P1</span> 需求 C6：计提结果可追溯</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>当前计提记录分散，难以追溯</td></tr>
+            <tr><td>需求</td><td>CRM计提模块记录完整的计提历史：谁在什么时间做了什么操作、修改了什么值、原始值是多少</td></tr>
+            <tr><td>验收标准</td><td>每条计提记录可追溯到操作人和操作时间；修改前后值可对比</td></tr>
+        </table>
+    </div>
+
+    <div class="req-card">
+        <h4><span class="priority p2">P2</span> 需求 C7：自动化计提（定时任务）</h4>
+        <table>
+            <tr><th>项</th><th>内容</th></tr>
+            <tr><td>背景</td><td>当前每月手动触发计提</td></tr>
+            <tr><td>需求</td><td>支持按业务线配置计提日程（每月几号触发），系统自动拉取数据侧结果并推送通知，用户只需确认或调整</td></tr>
+            <tr><td>验收标准</td><td>定时任务按配置触发；结果推送给计提人；超过截止时间自动提醒/升级</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- 需求汇总 -->
+<div class="card">
+    <h2>4.4 需求汇总</h2>
+    <table>
+        <tr><th>需求方</th><th>#</th><th>需求</th><th>优先级</th><th>依赖</th></tr>
+        <tr><td rowspan="6"><span class="tag tag-data">数据侧</span></td><td>D1</td><td>支持多数据源接入</td><td><span class="priority p0">P0</span></td><td>—</td></tr>
+        <tr><td>D2</td><td>每天自动更新计提数据</td><td><span class="priority p0">P0</span></td><td>—</td></tr>
+        <tr><td>D3</td><td>拉取CRM合同数据 + 预处理（替换/拆分/返点系数）</td><td><span class="priority p0">P0</span></td><td>C2（合同标记）</td></tr>
+        <tr><td>D4</td><td>计提数据输出4大类（收入/成本/返点/赔付），媒体×国家×账户×日</td><td><span class="priority p0">P0</span></td><td>D1-D3</td></tr>
+        <tr><td>D5</td><td>赔付数据处理（独立链路，预留虚拟金剥离）</td><td><span class="priority p0">P0</span></td><td>D4</td></tr>
+        <tr><td>D6</td><td>数据交付与后链路一致（支持tagid/包名粒度，结果可直接用）</td><td><span class="priority p1">P1</span></td><td>D4</td></tr>
+        <tr><td rowspan="7"><span class="tag tag-crm">CRM</span></td><td>C1</td><td>CRM新增计提模块（确认/调整/推送）</td><td><span class="priority p0">P0</span></td><td>D4</td></tr>
+        <tr><td>C2</td><td>合同管理（标记是否需要计提，无特殊标记统一处理）</td><td><span class="priority p0">P0</span></td><td>—</td></tr>
+        <tr><td>C3</td><td>汇率配置</td><td><span class="priority p0">P0</span></td><td>—</td></tr>
+        <tr><td>C4</td><td>各业务计提周期和计算公式配置</td><td><span class="priority p0">P0</span></td><td>—</td></tr>
+        <tr><td>C5</td><td>推送财务系统</td><td><span class="priority p0">P0</span></td><td>C1</td></tr>
+        <tr><td>C6</td><td>计提结果可追溯</td><td><span class="priority p1">P1</span></td><td>C1</td></tr>
+        <tr><td>C7</td><td>自动化计提（定时任务）</td><td><span class="priority p2">P2</span></td><td>C1, D2</td></tr>
+    </table>
+</div>
+</div>
+
+</div><!-- end container -->
+
+<script>
+    // 初始化 mermaid
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#e8f0fe',
+            primaryTextColor: '#1a73e8',
+            primaryBorderColor: '#1a73e8',
+            lineColor: '#5f6368',
+            secondaryColor: '#e6f4ea',
+            tertiaryColor: '#fef7e0',
+            fontSize: '14px'
+        },
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+    });
+
+    function renderMermaidIn(container) {
+        const mermaidDivs = container.querySelectorAll('.mermaid:not([data-processed])');
+        if (mermaidDivs.length === 0) return;
+        mermaid.run({ nodes: mermaidDivs }).catch(err => console.error('Mermaid error:', err));
+    }
+
+    // 渲染当前可见 tab
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) renderMermaidIn(activeTab);
+    });
+
+    // Tab 切换
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.getAttribute('data-tab');
+            document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const targetTab = document.getElementById(tabId);
+            targetTab.classList.add('active');
+            setTimeout(() => renderMermaidIn(targetTab), 100);
+        });
+    });
+</script>
+
+</body>
+</html>
