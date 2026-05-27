@@ -202,6 +202,7 @@
     <div class="nav-title">计提需求文档</div>
     <a href="#" class="tab-link active" data-tab="tab-status">计提现状</a>
     <a href="#" class="tab-link" data-tab="tab-pain">计提痛点</a>
+    <a href="#" class="tab-link" data-tab="tab-short">短期方案</a>
     <a href="#" class="tab-link" data-tab="tab-plan">计提规划</a>
     <a href="#" class="tab-link" data-tab="tab-req">计提需求</a>
 </div>
@@ -557,12 +558,212 @@ graph LR
 </div>
 
 <!-- ============================================================ -->
-<!--                       Tab 3: 计提规划                          -->
+<!--                    Tab 3: 短期方案                             -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab-short">
+
+<div class="card">
+    <h2>三、短期方案</h2>
+    <p style="color:var(--gray);">在现有计提平台基础上，通过数据侧提供两组数据 + 计提平台新公式，实现更准确的预估收入计算。对比两个方案的改动量和运营成本。</p>
+</div>
+
+<!-- 方案1 -->
+<div class="card">
+    <h2><span class="tag" style="background:#e8f0fe;color:#1967d2;">方案一</span> 数据提供两组数据 + 平台新公式</h2>
+
+    <div class="tip tip-info">
+        <span class="tip-icon">💡</span>
+        <div><strong>核心思路：</strong>数据侧提供两组不同时间点的数据（如25号和28号），计提平台通过新公式计算预估收入：<code>前X天收入 + (X-2到X-7)内平均值 × (当月天数-X)</code>，用最近5天平均值估算剩余天数收入。</div>
+    </div>
+
+    <h3>流程图</h3>
+    <div class="mermaid">
+graph TD
+    subgraph Phase1 ["阶段一：配置准备（不变）"]
+        A1["合同ID确认"] --> A2["配置文件核对"]
+        A2 --> A3["配置文件准备"]
+    end
+
+    subgraph Phase2 ["阶段二：数据导入（改动点）"]
+        B1["数据团队导出第一组数据<br/>（如25号数据，周期T-1）"]
+        B2["数据团队导出第二组数据<br/>（如28号数据，周期T-1）"]
+        B1 --> B3["两组数据同时导入计提平台"]
+        B2 --> B3
+    end
+
+    subgraph Phase3 ["阶段三：计提执行（改动点）"]
+        C1["计提平台计算"]
+        C2["新公式计算预估收入<br/>前X天收入 + (X-2~X-7)平均值<br/>× (当月天数-X)"]
+        C1 --> C2
+        C2 --> C3["媒体替换/国家替换/汇率等<br/>（不变）"]
+        C3 --> C4["输出计提结果"]
+    end
+
+    subgraph Phase4 ["阶段四：确认推送（不变）"]
+        D1["运营确认/微调"]
+        D2["推送CRM/SRM"]
+        D3["推送财务系统"]
+    end
+
+    A3 --> B3
+    B3 --> C1
+    C4 --> D1
+    D1 --> D2
+    D2 --> D3
+
+    style Phase1 fill:#f8f9fa,stroke:#dadce0
+    style Phase2 fill:#e8f0fe,stroke:#1a73e8
+    style Phase3 fill:#e8f0fe,stroke:#1a73e8
+    style Phase4 fill:#f8f9fa,stroke:#dadce0
+    </div>
+
+    <h3>改动点</h3>
+    <table>
+        <tr><th>阶段</th><th>改动内容</th><th>改动方</th></tr>
+        <tr><td>阶段一：配置准备</td><td><span class="tag tag-success" style="background:#e6f4ea;color:#137333;">无改动</span></td><td>—</td></tr>
+        <tr><td style="background:#e8f0fe;">阶段二：数据导入</td><td>
+            <strong>数据侧</strong>：提供两组数据（不同时间点，如25号和28号），格式相同但数据周期不同<br>
+            <strong>计提平台</strong>：支持导入两组数据，分别存储
+        </td><td>数据 + 计提平台</td></tr>
+        <tr><td style="background:#e8f0fe;">阶段三：计提执行</td><td>
+            <strong>计提平台</strong>：Step1 预估收入计算采用新公式<br>
+            <code>前X天收入 + (X-2~X-7)平均值 × (当月天数-X)</code><br>
+            其他逻辑（替换/拆分/汇率/返点）不变
+        </td><td>计提平台</td></tr>
+        <tr><td>阶段四：确认推送</td><td><span class="tag tag-success" style="background:#e6f4ea;color:#137333;">无改动</span></td><td>—</td></tr>
+    </table>
+
+    <h3>新计算公式</h3>
+    <div class="code-block">
+<span class="comment">// 现有公式</span>
+exDspFee = dspFee / accrualPeriod × dayByMonth
+
+<span class="comment">// 新公式（短期方案1）</span>
+exDspFee = 前X天实际收入 + average(第X-2天 ~ 第X-7天收入) × (当月天数 - X)
+
+<span class="comment">// 举例：5月28号计提，当月31天，X=28</span>
+<span class="comment">// 前28天实际收入 = 100,000</span>
+<span class="comment">// 26号~21号（5天）平均日收入 = 4,200</span>
+<span class="comment">// exDspFee = 100,000 + 4,200 × (31-28) = 100,000 + 12,600 = 112,600</span>
+    </div>
+
+    <h3>评估</h3>
+    <table>
+        <tr><th>维度</th><th>评估</th></tr>
+        <tr><td>平台改动量</td><td><span class="tag tag-pain">较大</span> — 需要支持双数据源导入 + 新计算公式</td></tr>
+        <tr><td>数据侧改动量</td><td><span class="tag tag-pain">较大</span> — 需要导出两组不同时间点的数据</td></tr>
+        <tr><td>运营人力成本</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">低</span> — 运营只需确认结果，不需要手动计算</td></tr>
+        <tr><td>准确性</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">较高</span> — 基于实际数据的滚动平均，比单一时间点推算更准</td></tr>
+    </table>
+</div>
+
+<!-- 方案2 -->
+<div class="card">
+    <h2><span class="tag" style="background:#fce8e6;color:#c5221f;">方案二</span> 数据导出两次 + 运营手动计算（已否决）</h2>
+
+    <div class="tip tip-danger">
+        <span class="tip-icon">❌</span>
+        <div><strong>已被运营否决：</strong>系统改造小，但运营人力成本大。数据导出两次，运营需要手动根据两次数据计算预估收入。</div>
+    </div>
+
+    <h3>流程图</h3>
+    <div class="mermaid">
+graph TD
+    subgraph Phase1 ["阶段一：配置准备（不变）"]
+        A1["合同ID确认"] --> A2["配置文件核对"]
+        A2 --> A3["配置文件准备"]
+    end
+
+    subgraph Phase2a ["阶段二 第一次：23号数据导入"]
+        B1["数据团队23号导出数据<br/>（23天数据）"]
+        B2["导入计提平台"]
+        B3["执行阶段二/三<br/>替换+计算"]
+        B4["输出第一版计提结果<br/>（基于23天数据）"]
+    end
+
+    subgraph Phase2b ["阶段二 第二次：28号数据导入"]
+        C1["数据团队28号导出数据<br/>（28天数据）"]
+        C2["导入计提平台"]
+        C3["执行阶段二/三<br/>替换+计算"]
+        C4["输出第二版计提结果<br/>（基于28天数据）"]
+    end
+
+    subgraph Manual ["运营手动计算"]
+        D1["运营获取两版结果"]
+        D2["手动计算预估收入<br/>（基于两次数据差异）"]
+        D3["手动更新计提数据"]
+    end
+
+    subgraph Phase4 ["阶段四：确认推送"]
+        E1["运营确认"]
+        E2["推送CRM/SRM"]
+        E3["推送财务系统"]
+    end
+
+    A3 --> B1
+    B1 --> B2 --> B3 --> B4
+    B4 --> D1
+    C1 --> C2 --> C3 --> C4
+    C4 --> D1
+    D1 --> D2 --> D3
+    D3 --> E1
+    E1 --> E2 --> E3
+
+    style Phase1 fill:#f8f9fa,stroke:#dadce0
+    style Phase2a fill:#fef7e0,stroke:#f9ab00
+    style Phase2b fill:#fef7e0,stroke:#f9ab00
+    style Manual fill:#fce8e6,stroke:#ea4335
+    style Phase4 fill:#f8f9fa,stroke:#dadce0
+    </div>
+
+    <h3>流程说明</h3>
+    <table>
+        <tr><th>时间</th><th>动作</th><th>说明</th></tr>
+        <tr><td>23号</td><td>第一次数据导出</td><td>数据团队导出23天数据，导入计提平台，完成阶段1/2/3，得到第一版计提结果</td></tr>
+        <tr><td>28号</td><td>第二次数据导出</td><td>数据团队导出28天数据，导入计提平台，完成阶段2/3，得到第二版计提结果</td></tr>
+        <tr><td>28-29号</td><td>运营手动计算</td><td>运营根据两次结果，手动计算预估收入，更新计提数据</td></tr>
+        <tr><td>29-31号</td><td>确认推送</td><td>进入正常阶段四流程</td></tr>
+    </table>
+
+    <h3>评估</h3>
+    <table>
+        <tr><th>维度</th><th>评估</th></tr>
+        <tr><td>平台改动量</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">小</span> — 只需要支持两次导入，不需要改计算逻辑</td></tr>
+        <tr><td>数据侧改动量</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">小</span> — 导出两次，格式不变</td></tr>
+        <tr><td>运营人力成本</td><td><span class="tag tag-pain">大</span> — 需要手动对比两次结果、手动计算预估收入、手动更新数据</td></tr>
+        <tr><td>准确性</td><td><span class="tag tag-special">中</span> — 依赖运营手动计算，可能有误差</td></tr>
+    </table>
+</div>
+
+<!-- 方案对比 -->
+<div class="card">
+    <h2>方案对比</h2>
+    <table>
+        <tr><th>维度</th><th>方案一（平台新公式）</th><th>方案二（运营手动）</th></tr>
+        <tr><td>核心思路</td><td>数据提供两组数据，平台用新公式自动计算</td><td>数据导出两次，运营手动计算预估收入</td></tr>
+        <tr><td>平台改动</td><td><span class="tag tag-pain">较大</span><br/>支持双数据源 + 新计算公式</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">小</span><br/>只支持两次导入</td></tr>
+        <tr><td>数据侧改动</td><td><span class="tag tag-pain">较大</span><br/>导出两组不同时间点数据</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">小</span><br/>导出两次，格式不变</td></tr>
+        <tr><td>运营人力</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">低</span><br/>只需确认结果</td><td><span class="tag tag-pain">大</span><br/>手动对比+计算+更新</td></tr>
+        <tr><td>准确性</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">较高</span><br/>系统自动计算</td><td><span class="tag tag-special">中</span><br/>依赖人工</td></tr>
+        <tr><td>可重复性</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">高</span><br/>每月自动执行</td><td><span class="tag tag-pain">低</span><br/>每月重复人工操作</td></tr>
+        <tr><td>状态</td><td><span class="tag" style="background:#e6f4ea;color:#137333;">推荐</span></td><td><span class="tag tag-pain">已否决</span>（运营人力成本大）</td></tr>
+    </table>
+
+    <div class="tip tip-info">
+        <span class="tip-icon">💡</span>
+        <div><strong>结论：</strong>方案一虽然平台和数据改动较大，但运营人力成本低、准确性高、可重复性好，是更合理的短期方案。方案二因运营否决（人力成本大），不再考虑。</div>
+    </div>
+</div>
+
+</div><!-- end tab-short -->
+
+<!-- ============================================================ -->
+<!--                       Tab 4: 计提规划                          -->
 <!-- ============================================================ -->
 <div class="tab-content" id="tab-plan">
 
 <div class="card">
-    <h2>三、计提规划</h2>
+    <h2>四、计提规划</h2>
     <p style="color:var(--gray);">未来规划：合同信息从CRM同步，在CRM中新增计提模块，与当前计提并行1-2个月验证数据。</p>
 </div>
 
@@ -691,12 +892,12 @@ graph LR
 </div>
 
 <!-- ============================================================ -->
-<!--                       Tab 4: 计提需求                          -->
+<!--                       Tab 5: 计提需求                          -->
 <!-- ============================================================ -->
 <div class="tab-content" id="tab-req">
 
 <div class="card">
-    <h2>四、计提需求</h2>
+    <h2>五、计提需求</h2>
     <p style="color:var(--gray);">基于现状和规划，梳理对数据侧和CRM的具体需求点。</p>
 </div>
 
