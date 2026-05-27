@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>miads 余额校准 — 名词解释</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --warning: #ea4335;
+            --warning-light: #fce8e6;
+            --success: #34a853;
+            --success-light: #e6f4ea;
+            --orange: #f9ab00;
+            --orange-light: #fef7e0;
+            --purple: #9334e6;
+            --purple-light: #f3e8fd;
+            --gray: #5f6368;
+            --gray-light: #f8f9fa;
+            --border: #dadce0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #202124;
+            line-height: 1.8;
+            background: #f8f9fa;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 { font-size: 28px; color: #202124; margin-bottom: 8px; }
+        .header p { color: var(--gray); font-size: 15px; }
+        .header .source {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+        .header .source a { color: var(--primary); text-decoration: none; }
+
+        /* 术语卡片 */
+        .term-card {
+            background: white;
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary);
+        }
+        .term-card.orange { border-left-color: var(--orange); }
+        .term-card.green { border-left-color: var(--success); }
+        .term-card.red { border-left-color: var(--warning); }
+        .term-card.purple { border-left-color: var(--purple); }
+
+        .term-card h2 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .term-card h2 .en {
+            font-size: 13px;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        .term-card .subtitle {
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .formula {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+        .formula .var { color: #9cdcfe; }
+        .formula .op { color: #d4d4d4; }
+        .formula .comment { color: #6a9955; }
+
+        .scenario {
+            background: var(--gray-light);
+            border-radius: 8px;
+            padding: 14px 20px;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .scenario strong { color: #333; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th { background: var(--gray-light); font-weight: 600; }
+        td { background: white; }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tag-auto { background: #e6f4ea; color: #137333; }
+        .tag-manual { background: #e8f0fe; color: #1967d2; }
+        .tag-pure { background: #fce8e6; color: #c5221f; }
+
+        .diff-table th:first-child { width: 120px; }
+
+        .tip {
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .tip-icon { font-size: 18px; flex-shrink: 0; }
+        .tip-info { background: var(--primary-light); border: 1px solid #aecbfa; }
+        .tip-warning { background: #fef7e0; border: 1px solid #fdd663; }
+
+        .divider {
+            border: none;
+            border-top: 2px dashed var(--border);
+            margin: 40px 0;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .type-badge.auto { background: #e6f4ea; color: #137333; }
+        .type-badge.manual { background: #e8f0fe; color: #1967d2; }
+        .type-badge.purely { background: #fce8e6; color: #c5221f; }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .term-card { padding: 20px; }
+            table { font-size: 12px; }
+            th, td { padding: 6px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>miads 余额校准 — 名词解释</h1>
+        <p>基于「miads 平台消耗 vs CRM 计提调整金额」差额向 miads 账户充值/扣款修正</p>
+        <div class="source">来源：<a href="https://mi.feishu.cn/wiki/CteewnXmeio6IDk4B80c7X55nOh" target="_blank">【Q2需求】miads 余额校准改造</a></div>
+    </div>
+
+    <!-- 校准 -->
+    <div class="term-card">
+        <h2>校准 <span class="en">Correction / Balance Calibration</span></h2>
+        <div class="subtitle">余额校准的核心概念</div>
+
+        <p>基于 <strong>"miads 平台消耗 vs CRM 计提调整金额"</strong> 的差额，向 miads 账户进行充值或扣款修正。</p>
+
+        <div class="formula">
+<span class="comment">// 校准金额计算公式</span>
+<span class="var">校准金额</span> <span class="op">=</span> <span class="var">平台消耗</span> <span class="op">-</span> <span class="var">计提调整金额</span>
+
+<span class="comment">// 其中：</span>
+<span class="var">平台消耗</span>     = 数鲸 DSP_fee（含 miads 消耗 + offline 消耗合计）
+<span class="var">计提调整金额</span> = 该 miads × 月份 b_provision_manage.usd_money 求和（type IN '1','2'）
+        </div>
+
+        <table>
+            <tr><th>校准金额</th><th>动作</th><th>说明</th></tr>
+            <tr><td style="color:var(--success);font-weight:700;">正值</td><td>充值</td><td>给 miads 账户充值</td></tr>
+            <tr><td style="color:var(--warning);font-weight:700;">负值</td><td>扣款</td><td>从 miads 账户扣款</td></tr>
+            <tr><td style="color:var(--gray);font-weight:700;">零值</td><td>不调接口</td><td>仅留记录，不执行充值/扣款</td></tr>
+        </table>
+    </div>
+
+    <!-- 冲销 -->
+    <div class="term-card orange">
+        <h2>冲销 <span class="en">Reverse</span></h2>
+        <div class="subtitle">记录动作：CORRECTION（校准）/ REVERSE（冲销）</div>
+
+        <p>覆盖已校准月份时生成的<strong>反向金额记录</strong>，金额 = 原金额 × -1。</p>
+
+        <div class="scenario">
+            <strong>场景：</strong>某月已校准过，但数据有误需要重新校准时：<br>
+            ① 系统先生成一条<strong>冲销记录</strong>（把之前的校准撤销）<br>
+            ② 再生成一条<strong>新的校准记录</strong><br>
+            ③ 两条记录<strong>共享一张审批单</strong>（避免重复审批）<br>
+            ④ 审批通过后串行执行：先调 miads 冲销接口，再调充值接口
+        </div>
+
+        <div class="tip tip-info">
+            <span class="tip-icon">💡</span>
+            <div>冲销不是独立操作，而是「重新校准」流程的一部分。只有当某月需要覆盖已有校准时，才会自动生成冲销记录。</div>
+        </div>
+    </div>
+
+    <!-- 手动校准 -->
+    <div class="term-card green">
+        <h2>手动校准 <span class="en">Manual Calibration</span></h2>
+        <div class="subtitle"><span class="type-badge manual">MANUAL</span> 校准记录类型</div>
+
+        <p>由<strong>运营/商务主动发起</strong>的校准，系统自动从数鲸取消耗数据、从计提系统取对账金额，自动计算校准金额。</p>
+
+        <table>
+            <tr><th>项</th><th>说明</th></tr>
+            <tr><td>入口</td><td>收款合同列表 → 余额校准按钮 → 发起手动校准</td></tr>
+            <tr><td>数据来源</td><td><strong>系统自动取数</strong>（数鲸消耗 + 计提对账金额）</td></tr>
+            <tr><td>用户操作</td><td>确认系统取数结果，无需手动输入金额</td></tr>
+            <tr><td>审批</td><td>商务对接人一审 → 运营二审</td></tr>
+            <tr><td>适用场景</td><td>数据正常，运营需要主动发起校准</td></tr>
+        </table>
+    </div>
+
+    <!-- 月度自动校准 -->
+    <div class="term-card purple">
+        <h2>月度自动校准 <span class="en">Auto Calibration</span></h2>
+        <div class="subtitle"><span class="type-badge auto">AUTO</span> 校准记录类型</div>
+
+        <p>系统<strong>每月自动执行</strong>的校准，无需人工触发。</p>
+
+        <table>
+            <tr><th>项</th><th>值</th></tr>
+            <tr><td>频率</td><td>每月 1 次</td></tr>
+            <tr><td>时间</td><td>每月 5 日 06:00（计算 + 发审批）+ 6 日 06:00（充值）</td></tr>
+            <tr><td>扫描范围</td><td>T-2 月 + T-2 月之前所有未校准的月份（最早到 2026-06）</td></tr>
+            <tr><td>白名单</td><td>支持按 miads ID 维度灰度</td></tr>
+            <tr><td>首次生效</td><td>2026-08-05 06:00，校准 2026-06 月</td></tr>
+        </table>
+
+        <div class="scenario">
+            <strong>流程：</strong>系统自动取数 → 生成校准记录 → 发起审批（商务对接人一审 → 运营二审）→ 审批通过后自动调 miads 充值接口
+        </div>
+
+        <div class="tip tip-warning">
+            <span class="tip-icon">⚠️</span>
+            <div><strong>注意：</strong>即使是自动校准，金额为 0 的记录也需要走审批。所有校准（自动/手动/异常）都需要审批，不再有 100% 自动执行的情况。</div>
+        </div>
+    </div>
+
+    <!-- 异常校准 -->
+    <div class="term-card red">
+        <h2>异常校准 <span class="en">Manual Purely Calibration</span></h2>
+        <div class="subtitle"><span class="type-badge purely">MANUAL_PURELY</span> 校准记录类型</div>
+
+        <p>当系统数据有问题时，由人工<strong>手动输入</strong>消耗金额和计提对账金额进行校准。</p>
+
+        <div class="scenario">
+            <strong>使用场景：</strong><br>
+            • 数鲸数据异常（延迟、缺失、错误）<br>
+            • 计提数据异常（补计提未走完、金额明显有误）<br>
+            • 其他系统数据问题导致自动/手动校准都无法生成正确金额<br>
+            • 核心定位：<strong>临时性应对系统数据问题</strong>
+        </div>
+
+        <table class="diff-table">
+            <tr><th>对比项</th><th>手动校准</th><th>异常校准</th></tr>
+            <tr><td>数据来源</td><td>系统自动取数</td><td><strong>用户手动输入</strong>消耗金额和计提对账金额</td></tr>
+            <tr><td>用户操作</td><td>确认系统结果</td><td>手动填写金额 + 上传附件 + 填写异常原因</td></tr>
+            <tr><td>附件</td><td>不需要</td><td>需要上传凭证（最多5个）</td></tr>
+            <tr><td>异常原因</td><td>不需要</td><td>必填（最多200字）</td></tr>
+            <tr><td>审批链</td><td>二级（商务 → 运营）</td><td><strong>三级加严</strong>（按发起人角色分两种路径）</td></tr>
+            <tr><td>记录类型</td><td><span class="type-badge manual">MANUAL</span></td><td><span class="type-badge purely">MANUAL_PURELY</span></td></tr>
+        </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- 三种校准类型对比 -->
+    <div class="term-card">
+        <h2>三种校准类型对比</h2>
+
+        <table>
+            <tr>
+                <th>维度</th>
+                <th><span class="type-badge auto">月度自动校准</span></th>
+                <th><span class="type-badge manual">手动校准</span></th>
+                <th><span class="type-badge purely">异常校准</span></th>
+            </tr>
+            <tr>
+                <td><strong>触发方式</strong></td>
+                <td>系统每月自动执行</td>
+                <td>运营/商务主动发起</td>
+                <td>运营/商务主动发起</td>
+            </tr>
+            <tr>
+                <td><strong>数据来源</strong></td>
+                <td>系统自动取数</td>
+                <td>系统自动取数</td>
+                <td>用户手动输入</td>
+            </tr>
+            <tr>
+                <td><strong>使用场景</strong></td>
+                <td>常规月度校准</td>
+                <td>需要提前或补充校准</td>
+                <td>系统数据异常</td>
+            </tr>
+            <tr>
+                <td><strong>审批</strong></td>
+                <td>二级（商务→运营）</td>
+                <td>二级（商务→运营）</td>
+                <td>三级加严</td>
+            </tr>
+            <tr>
+                <td><strong>附件/原因</strong></td>
+                <td>不需要</td>
+                <td>不需要</td>
+                <td>必填</td>
+            </tr>
+            <tr>
+                <td><strong>记录类型</strong></td>
+                <td><code>AUTO</code></td>
+                <td><code>MANUAL</code></td>
+                <td><code>MANUAL_PURELY</code></td>
+            </tr>
+            <tr>
+                <td><strong>扫描范围</strong></td>
+                <td>T-2月 + 之前未校准月</td>
+                <td>用户选择月份</td>
+                <td>用户选择月份</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 其他相关术语 -->
+    <div class="term-card">
+        <h2>其他相关术语</h2>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td>校准月份</td><td>被校准的自然月，格式 <code>YYYY-MM</code></td></tr>
+            <tr><td>平台消耗</td><td>数鲸 DSP_fee（含 miads 消耗 + offline 消耗合计）</td></tr>
+            <tr><td>计提调整金额</td><td>该 miads × 月份 <code>b_provision_manage.usd_money</code> 求和（type IN '1','2'），即调整后的最终 USD 入账金额</td></tr>
+            <tr><td>T-1 / T-2</td><td>当前执行月往前数 1 / 2 个完整自然月</td></tr>
+            <tr><td>未校准月份</td><td>该 miads 在目标月份不存在 <code>approval_status IN (1,2)</code> 的 recharge（曾被驳回/未发起/仅 SKIPPED 状态均视为未校准）</td></tr>
+            <tr><td>合同创建人</td><td><code>b_collection_contract.created_by</code></td></tr>
+            <tr><td>商务对接人</td><td><code>b_collection_contract_other</code> type=2，按 orders asc</td></tr>
+            <tr><td>运营</td><td><code>b_collection_contract_other</code> type=3，按 orders asc</td></tr>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
