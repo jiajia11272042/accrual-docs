@@ -782,6 +782,8 @@ graph TD
     subgraph CRM ["CRM系统"]
         A["合同管理<br/>合同ID/账户/币种/结算方式<br/>标记是否需要计提"]
         B["汇率配置"]
+        L["配置每个业务线<br/>计算公式"]
+        M["预估计算<br/>按公式生成预估收入/成本"]
         C["预估结果确认<br/>人工调整（可选）"]
         D["推送财务系统"]
     end
@@ -792,11 +794,6 @@ graph TD
         I["拉取CRM合同数据<br/>替换合同信息"]
         J["数据预处理<br/>媒体/广告位替换<br/>国家替换<br/>MSA收入分成<br/>返点系数计算"]
         K["计提基础数据输出<br/>国家×媒体×账户维度<br/>每日收入数据"]
-    end
-
-    subgraph Accrual ["计提平台（预估计算）"]
-        L["配置每个业务线<br/>计算公式"]
-        M["预估计算<br/>按公式生成预估收入/成本"]
     end
 
     A -->|合同信息 + 是否计提标记| I
@@ -814,7 +811,6 @@ graph TD
 
     style CRM fill:#f3e8fd,stroke:#9334e6
     style Data fill:#fef7e0,stroke:#f9ab00
-    style Accrual fill:#e8f0fe,stroke:#1a73e8
     </div>
 
     <div class="tip tip-info">
