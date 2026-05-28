@@ -349,7 +349,11 @@ graph LR
     B["计提平台 config_miads<br/>━━━━━━━━━━━━━━━━<br/>计提平台进行的核心计算：<br/>· 媒体替换<br/>· 广告位替换<br/>· 收入分成（MSA拆分）<br/>· 国家替换<br/>· 汇率转换<br/>· 预估收入计算<br/>· 返点计算"]
 
     B -->|计算| F["计提结果<br/>预估收入/计提金额"]
-    F -->|下载Excel| G["运营手动上传<br/>CRM/SRM"]
+    F -->|手动| I["手动计提赔付<br/>👤 赔付负责人"]
+    F -->|手动| J["手动计提返点<br/>👤 返点负责人"]
+    I -->|Excel| K["合并数据"]
+    J -->|Excel| K
+    K -->|下载Excel| G["运营手动上传<br/>CRM/SRM"]
     G -->|推送| H["财务系统"]
 
     style A fill:#f3e8fd,stroke:#9334e6
@@ -358,6 +362,9 @@ graph LR
     style E fill:#fce8e6,stroke:#ea4335
     style B fill:#e6f4ea,stroke:#34a853
     style H fill:#f8f9fa,stroke:#dadce0
+    style I fill:#fce8e6,stroke:#ea4335,stroke-width:2px
+    style J fill:#fce8e6,stroke:#ea4335,stroke-width:2px
+    style K fill:#fef3e0,stroke:#f57c00,stroke-width:2px
     </div>
 
     <div class="tip tip-warning">
