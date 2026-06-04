@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计提平台需求文档（新平台）</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --warning: #ea4335;
+            --warning-light: #fce8e6;
+            --success: #34a853;
+            --success-light: #e6f4ea;
+            --orange: #f9ab00;
+            --orange-light: #fef7e0;
+            --purple: #9334e6;
+            --purple-light: #f3e8fd;
+            --gray: #5f6368;
+            --gray-light: #f8f9fa;
+            --border: #dadce0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #202124;
+            line-height: 1.8;
+            background: #f8f9fa;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        /* Tab 导航 */
+        .nav {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+        .nav-title { font-weight: 700; font-size: 18px; color: var(--primary); white-space: nowrap; }
+        .tab-link {
+            color: var(--gray) !important;
+            text-decoration: none !important;
+            padding: 8px 18px !important;
+            border-radius: 20px !important;
+            font-size: 14px !important;
+            transition: all 0.2s !important;
+            cursor: pointer !important;
+        }
+        .tab-link:hover { background: var(--primary-light) !important; color: var(--primary) !important; }
+        .tab-link.active { background: var(--primary) !important; color: white !important; font-weight: 600 !important; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 卡片 */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { font-size: 22px; margin-bottom: 16px; color: #202124; }
+        .card h3 { font-size: 18px; margin: 20px 0 12px; color: #333; }
+        .card h4 { font-size: 16px; margin: 16px 0 8px; color: #444; }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 1px 2px;
+        }
+        .tag-data { background: #fef7e0; color: #e37400; }
+        .tag-platform { background: #e8f0fe; color: #1967d2; }
+        .tag-crm { background: #f3e8fd; color: #7627bb; }
+        .tag-priority { background: #fce8e6; color: #c5221f; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+        th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+        th { background: var(--gray-light); font-weight: 600; white-space: nowrap; }
+        td { background: white; }
+        tr:hover td { background: #f0f4ff; }
+
+        /* 提示框 */
+        .tip {
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .tip-icon { font-size: 18px; flex-shrink: 0; }
+        .tip-warning { background: #fef7e0; border: 1px solid #fdd663; }
+        .tip-info { background: var(--primary-light); border: 1px solid #aecbfa; }
+        .tip-success { background: var(--success-light); border: 1px solid #a8dab5; }
+        .tip-danger { background: #fce8e6; border: 1px solid #f5bcb7; }
+
+        /* 流程图 */
+        .mermaid { text-align: center; margin: 20px 0; overflow-x: auto; }
+
+        /* 需求卡片 */
+        .req-card {
+            border: 1px solid #aecbfa;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: #f8fbff;
+        }
+        .req-card h4 { color: var(--primary); margin-bottom: 6px; }
+
+        .req-card-data {
+            border: 1px solid #fdd663;
+            border-left: 4px solid var(--orange);
+            background: #fffdf5;
+        }
+        .req-card-data h4 { color: #e37400; }
+
+        .req-card-platform {
+            border: 1px solid #aecbfa;
+            border-left: 4px solid var(--primary);
+            background: #f8fbff;
+        }
+        .req-card-platform h4 { color: var(--primary); }
+
+        /* 原型图容器 */
+        .prototype {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            background: var(--gray-light);
+        }
+        .prototype-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        /* 原型 UI 组件 */
+        .proto-page {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .proto-header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .proto-toolbar {
+            background: #f1f3f4;
+            padding: 10px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+        }
+        .proto-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .proto-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+        .proto-btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .proto-btn-primary:hover { background: #1557b0; }
+        .proto-btn-danger {
+            background: var(--warning);
+            color: white;
+            border-color: var(--warning);
+        }
+        .proto-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .proto-table th {
+            background: #f1f3f4;
+            padding: 8px 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .proto-table td {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .proto-table tr:hover td { background: #f0f4ff; }
+        .proto-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .proto-status-ok { background: var(--success-light); color: var(--success); }
+        .proto-status-pending { background: var(--orange-light); color: #e37400; }
+        .proto-status-error { background: var(--warning-light); color: var(--warning); }
+
+        /* 弹窗原型 */
+        .proto-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .proto-modal {
+            background: white;
+            border-radius: 12px;
+            width: 560px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .proto-modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .proto-modal-body { padding: 20px 24px; }
+        .proto-modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .proto-form-group { margin-bottom: 14px; }
+        .proto-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; display: block; }
+        .proto-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .proto-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+
+        /* 侧边栏原型 */
+        .proto-layout { display: flex; min-height: 500px; }
+        .proto-sidebar {
+            width: 200px;
+            background: #1a1a2e;
+            color: white;
+            padding: 16px 0;
+            flex-shrink: 0;
+        }
+        .proto-sidebar-item {
+            padding: 10px 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .proto-sidebar-item:hover { background: rgba(255,255,255,0.1); }
+        .proto-sidebar-item.active { background: var(--primary); font-weight: 600; }
+        .proto-main { flex: 1; padding: 0; }
+
+        /* 进度条 */
+        .proto-progress {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 4px 0;
+        }
+        .proto-progress-bar {
+            height: 100%;
+            background: var(--success);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        /* 高亮数值 */
+        .amount-positive { color: var(--success); font-weight: 600; }
+        .amount-negative { color: var(--warning); font-weight: 600; }
+        .amount-zero { color: var(--gray); }
+
+        /* 分割线 */
+        hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+        /* 两列布局 */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 导航 -->
+        <div class="nav">
+            <span class="nav-title">计提平台 PRD</span>
+            <a class="tab-link active" onclick="switchTab('overview')">概述</a>
+            <a class="tab-link" onclick="switchTab('data')">数据组需求</a>
+            <a class="tab-link" onclick="switchTab('platform')">平台组需求</a>
+            <a class="tab-link" onclick="switchTab('flow')">核心流程</a>
+            <a class="tab-link" onclick="switchTab('proto')">原型图</a>
+        </div>
+
+        <!-- ========== 概述 ========== -->
+        <div id="overview" class="tab-content active">
+            <div class="card">
+                <h2>1. 项目概述</h2>
+
+                <h3>1.1 背景</h3>
+                <p>现有计提平台存在计算逻辑与配置维护耦合、数据粒度粗、无法按业务线灵活配置公式等问题。本次新建独立计提平台，将<strong>数据处理</strong>与<strong>计提计算</strong>解耦，由数据组负责原始数据输出，平台组负责合同匹配、汇率转换、预估计算、手动调整、同步财务。</p>
+
+                <h3>1.2 核心设计原则</h3>
+                <table>
+                    <tr><th>原则</th><th>说明</th></tr>
+                    <tr><td><strong>数据与计算分离</strong></td><td>数据组只负责原始数据输出，不参与计提计算逻辑</td></tr>
+                    <tr><td><strong>公式可配置</strong></td><td>每个业务线可独立配置预估计算公式，无需改代码</td></tr>
+                    <tr><td><strong>人工可干预</strong></td><td>预估结果支持手动调整，调整后可一键推送财务</td></tr>
+                    <tr><td><strong>合同信息复用CRM</strong></td><td>合同ID/账户/币种等信息从CRM读取，不重复维护</td></tr>
+                </table>
+
+                <h3>1.3 系统边界</h3>
+                <div class="mermaid">
+graph LR
+    subgraph DataTeam ["数据组（数据侧）"]
+        A["原始消耗数据<br/>激活/点击/消耗"]
+        B["配置文件<br/>媒体替换/国家替换/返点系数"]
+        C["数据预处理<br/>媒体/广告位替换<br/>国家替换<br/>MSA收入分成<br/>返点系数计算"]
+        D["计提基础数据输出<br/>国家×媒体×账户×日"]
+    end
+
+    subgraph CRM ["CRM系统（现有）"]
+        E["合同管理<br/>合同ID/账户/币种/结算方式"]
+        F["汇率配置"]
+    end
+
+    subgraph Platform ["计提平台（新）"]
+        G["合同信息匹配"]
+        H["汇率转换"]
+        I["预估计算<br/>（业务线公式配置）"]
+        J["预估结果确认<br/>手动调整（可选）"]
+        K["推送财务系统"]
+    end
+
+    A --> C
+    B --> C
+    C --> D
+    D -->|基础数据| G
+    E -->|合同信息| G
+    F -->|汇率| H
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+
+    style DataTeam fill:#fef7e0,stroke:#f9ab00
+    style CRM fill:#f3e8fd,stroke:#9334e6
+    style Platform fill:#e8f0fe,stroke:#1a73e8
+                </div>
+
+                <div class="tip tip-info">
+                    <span class="tip-icon">💡</span>
+                    <div><strong>关键区分：</strong>数据组产出<strong>计提基础数据</strong>（国家×媒体×账户维度），平台组在此基础上做合同匹配、汇率转换、预估计算，两组职责完全独立。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 数据组需求 ========== -->
+        <div id="data" class="tab-content">
+            <div class="card">
+                <h2>2. 数据组需求</h2>
+                <p><span class="tag tag-data">数据组</span> 负责原始数据接入、清洗、配置替换，最终输出计提基础数据。</p>
+
+                <h3>2.1 数据输入</h3>
+                <table>
+                    <tr><th>数据源</th><th>内容</th><th>更新频率</th><th>负责人</th></tr>
+                    <tr><td>自有系统</td><td>miads 消耗/激活/点击</td><td>每日</td><td>数据团队</td></tr>
+                    <tr><td>第三方 API</td><td>offline 消耗数据</td><td>每日</td><td>数据团队</td></tr>
+                    <tr><td>CRM 合同系统</td><td>合同ID/账户/币种/结算方式</td><td>手动同步</td><td>运营</td></tr>
+                    <tr><td>配置文件</td><td>媒体替换规则/国家替换规则/返点系数</td><td>人工上传</td><td>运营/ADPM</td></tr>
+                </table>
+
+                <h3>2.2 数据预处理</h3>
+                <div class="mermaid">
+graph TD
+    A["原始消耗数据<br/>媒体名/国家/账户/消耗额/激活数"] --> B["媒体替换<br/>将原始媒体名映射为标准媒体名"]
+    B --> C["广告位替换<br/>TagID → 标准广告位"]
+    C --> D["国家替换<br/>原始国家码 → 标准国家"]
+    D --> E["MSA收入分成<br/>按分成比例拆分收入"]
+    E --> F["返点系数计算<br/>按配置计算返点"]
+    F --> G["计提基础数据输出<br/>国家×媒体×账户×日"]
+
+    style A fill:#fef7e0,stroke:#f9ab00
+    style G fill:#e6f4ea,stroke:#34a853
+                </div>
+
+                <h3>2.3 输出数据格式</h3>
+                <div class="req-card req-card-data">
+                    <h4>输出字段</h4>
+                    <table>
+                        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+                        <tr><td>media_type</td><td>String</td><td>标准媒体名（替换后）</td></tr>
+                        <tr><td>region</td><td>String</td><td>标准国家码</td></tr>
+                        <tr><td>account_id</td><td>String</td><td>账户ID</td></tr>
+                        <tr><td>dsp_fee</td><td>Long</td><td>消耗金额（微美元）</td></tr>
+                        <tr><td>dsp_active</td><td>Long</td><td>激活数</td></tr>
+                        <tr><td>date</td><td>String</td><td>日期 YYYY-MM-DD</td></tr>
+                        <tr><td>revenue</td><td>Long</td><td>收入金额（微美元，分成后）</td></tr>
+                        <tr><td>rebate_ratio</td><td>Decimal</td><td>返点系数</td></tr>
+                    </table>
+                </div>
+
+                <div class="tip tip-warning">
+                    <span class="tip-icon">⚠️</span>
+                    <div><strong>注意事项：</strong>数据组<strong>不做任何计提计算</strong>，只做数据清洗和配置替换。预估收入计算、合同匹配、汇率转换全部由平台组完成。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 平台组需求 ========== -->
+        <div id="platform" class="tab-content">
+            <div class="card">
+                <h2>3. 平台组需求</h2>
+                <p><span class="tag tag-platform">平台组</span> 承接数据组输出的基础数据，完成合同匹配、汇率转换、预估计算、手动调整、推送财务。</p>
+
+                <h3>3.1 合同信息匹配</h3>
+                <div class="req-card req-card-platform">
+                    <h4>需求 D1：合同数据同步 <span class="tag tag-priority">P0</span></h4>
+                    <table>
+                        <tr><td><strong>需求</strong></td><td>从 CRM 合同系统读取合同信息（合同ID/账户ID/币种/结算方式/计提标记），同步到计提平台</td></tr>
+                        <tr><td><strong>触发方式</strong></td><td>手动同步（运营点击"同步合同"按钮）+ 定时同步（每日凌晨）</td></tr>
+                        <tr><td><strong>匹配逻辑</strong></td><td>通过 account_id 关联 CRM 合同表，一个 account_id 对应一个合同ID</td></tr>
+                        <tr><td><strong>边界处理</strong></td><td>未匹配到合同的账户 → 标记为"未匹配"，不参与计提计算</td></tr>
+                    </table>
+                </div>
+
+                <h3>3.2 汇率转换</h3>
+                <div class="req-card req-card-platform">
+                    <h4>需求 D2：汇率转换 <span class="tag tag-priority">P0</span></h4>
+                    <table>
+                        <tr><td><strong>需求</strong></td><td>将非 USD 币种的金额按配置汇率转换为 USD</td></tr>
+                        <tr><td><strong>汇率来源</strong></td><td>平台内"汇率配置"模块，运营手动维护</td></tr>
+                        <tr><td><strong>转换规则</strong></td><td>按结算币种 × 汇率 = USD金额，汇率保留6位小数</td></tr>
+                        <tr><td><strong>边界处理</strong></td><td>汇率未配置 → 标记为"汇率缺失"，金额不转换，阻塞推送</td></tr>
+                    </table>
+                </div>
+
+                <h3>3.3 预估计算（核心）</h3>
+                <div class="req-card req-card-platform">
+                    <h4>需求 D3：预估收入/成本计算 <span class="tag tag-priority">P0</span></h4>
+                    <table>
+                        <tr><td><strong>需求</strong></td><td>根据业务线配置的计算公式，自动计算预估收入/成本</td></tr>
+                        <tr><td><strong>公式配置</strong></td><td>每个业务线可独立配置公式，如：<br><code>预估收入 = 收入 × (1 - 返点系数) × 汇率</code><br><code>预估成本 = 消耗 × 成本系数</code></td></tr>
+                        <tr><td><strong>计算粒度</strong></td><td>按合同 × 月份汇总</td></tr>
+                        <tr><td><strong>输出</strong></td><td>预估收入（USD）、预估成本（USD）、预估利润</td></tr>
+                    </table>
+                </div>
+
+                <h3>3.4 手动调整</h3>
+                <div class="req-card req-card-platform">
+                    <h4>需求 D4：预估结果手动调整 <span class="tag tag-priority">P0</span></h4>
+                    <table>
+                        <tr><td><strong>需求</strong></td><td>运营可查看预估结果，选择是否手动调整</td></tr>
+                        <tr><td><strong>调整方式</strong></td><td>直接修改预估收入/成本金额，系统自动重算利润</td></tr>
+                        <tr><td><strong>调整记录</strong></td><td>记录调整前后的金额、调整人、调整时间、调整原因</td></tr>
+                        <tr><td><strong>锁定机制</strong></td><td>已推送财务的月份锁定，不可再调整</td></tr>
+                    </table>
+                </div>
+
+                <h3>3.5 推送财务系统</h3>
+                <div class="req-card req-card-platform">
+                    <h4>需求 D5：一键推送财务 <span class="tag tag-priority">P0</span></h4>
+                    <table>
+                        <tr><td><strong>需求</strong></td><td>确认预估结果后，一键推送到财务系统</td></tr>
+                        <tr><td><strong>推送条件</strong></td><td>合同已匹配 + 汇率已配置 + 预估金额已确认</td></tr>
+                        <tr><td><strong>推送内容</strong></td><td>合同ID、计提月份、预估收入、预估成本、币种、结算方式</td></tr>
+                        <tr><td><strong>推送后状态</strong></td><td>该月份标记为"已推送"，不可再调整</td></tr>
+                        <tr><td><strong>失败处理</strong></td><td>推送失败 → 标记为"推送失败"，支持重试</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 核心流程 ========== -->
+        <div id="flow" class="tab-content">
+            <div class="card">
+                <h2>4. 核心流程</h2>
+
+                <h3>4.1 计提全流程</h3>
+                <div class="mermaid">
+graph TD
+    subgraph DataFlow ["数据组流程"]
+        A1["每日消耗数据导入"] --> A2["媒体/国家替换"]
+        A2 --> A3["MSA分成 + 返点系数"]
+        A3 --> A4["输出计提基础数据<br/>国家×媒体×账户×日"]
+    end
+
+    subgraph PlatformFlow ["平台组流程"]
+        B1["接收基础数据"] --> B2["合同信息匹配<br/>account_id → contract_id"]
+        B2 --> B3{"匹配成功？"}
+        B3 -->|是| B4["汇率转换<br/>非USD → USD"]
+        B3 -->|否| B5["标记为"未匹配"<br/>跳过计提"]
+        B4 --> B6["预估计算<br/>按业务线公式"]
+        B6 --> B7["预估结果列表<br/>合同×月份×金额"]
+        B7 --> B8{"需要调整？"}
+        B8 -->|否| B9["确认推送"]
+        B8 -->|是| B10["手动调整金额"]
+        B10 --> B11["保存调整记录"]
+        B11 --> B9
+        B9 --> B12["推送财务系统"]
+        B12 --> B13["更新状态为"已推送""]
+    end
+
+    A4 --> B1
+
+    style DataFlow fill:#fef7e0,stroke:#f9ab00
+    style PlatformFlow fill:#e8f0fe,stroke:#1a73e8
+                </div>
+
+                <h3>4.2 合同匹配流程</h3>
+                <div class="mermaid">
+flowchart TD
+    Start["接收基础数据"] --> Query["查询CRM合同表<br/>WHERE account_id = ?"]
+    Query --> Found{"找到合同？"}
+    Found -->|是| Bind["绑定合同ID<br/>读取币种/结算方式/计提标记"]
+    Bind --> CheckFlag{"需要计提？"}
+    CheckFlag -->|是| Pass["进入汇率转换"]
+    CheckFlag -->|否| Skip["标记：不需要计提"]
+    Found -->|否| NoMatch["标记：未匹配合同"]
+
+    style Start fill:#e8f0fe,stroke:#1a73e8
+    style Pass fill:#e6f4ea,stroke:#34a853
+    style Skip fill:#fef7e0,stroke:#f9ab00
+    style NoMatch fill:#fce8e6,stroke:#ea4335
+                </div>
+
+                <h3>4.3 预估计算流程</h3>
+                <div class="mermaid">
+flowchart TD
+    Input["合同 × 月份 × 基础数据"] --> LoadFormula["加载业务线计算公式"]
+    LoadFormula --> CalcType{"合同类型？"}
+    CalcType -->|收入合同| RevCalc["预估收入 = 收入 × (1-返点) × 汇率"]
+    CalcType -->|成本合同| CostCalc["预估成本 = 消耗 × 成本系数 × 汇率"]
+    RevCalc --> Merge["汇总到合同×月份维度"]
+    CostCalc --> Merge
+    Merge --> Result["输出预估结果<br/>预估收入/预估成本/预估利润"]
+
+    style Input fill:#e8f0fe,stroke:#1a73e8
+    style Result fill:#e6f4ea,stroke:#34a853
+                </div>
+
+                <h3>4.4 手动调整 & 推送流程</h3>
+                <div class="mermaid">
+flowchart TD
+    Show["展示预估结果列表"] --> UserCheck{"运营是否调整？"}
+    UserCheck -->|否| Confirm["点击"确认推送""]
+    UserCheck -->|是| Edit["修改预估金额"]
+    Edit --> Reason["填写调整原因"]
+    Reason --> Save["保存调整记录"]
+    Save --> Confirm
+    Confirm --> PreCheck{"推送前校验"}
+    PreCheck -->|通过| Push["调用财务系统API"]
+    PreCheck -->|失败| Block["提示缺失项<br/>（合同/汇率/金额）"]
+    Push --> PushResult{"推送结果"}
+    PushResult -->|成功| Done["状态 → 已推送<br/>月份锁定"]
+    PushResult -->|失败| Retry["标记推送失败<br/>支持重试"]
+
+    style Show fill:#e8f0fe,stroke:#1a73e8
+    style Done fill:#e6f4ea,stroke:#34a853
+    style Block fill:#fce8e6,stroke:#ea4335
+    style Retry fill:#fef7e0,stroke:#f9ab00
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 原型图 ========== -->
+        <div id="proto" class="tab-content">
+            <div class="card">
+                <h2>5. 原型图</h2>
+
+                <!-- 原型1: 计提总览页 -->
+                <h3>5.1 计提总览页</h3>
+                <div class="prototype">
+                    <div class="prototype-title">计提总览 — 按月份查看预估结果</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>计提管理</span>
+                            <span style="font-size:12px;opacity:0.8">计提平台 v2.0</span>
+                        </div>
+                        <div class="proto-layout">
+                            <div class="proto-sidebar">
+                                <div class="proto-sidebar-item active">计提总览</div>
+                                <div class="proto-sidebar-item">合同管理</div>
+                                <div class="proto-sidebar-item">汇率配置</div>
+                                <div class="proto-sidebar-item">公式配置</div>
+                                <div class="proto-sidebar-item">推送记录</div>
+                            </div>
+                            <div class="proto-main">
+                                <div class="proto-toolbar">
+                                    <select class="proto-input" style="width:120px">
+                                        <option>2026-06</option>
+                                        <option>2026-05</option>
+                                        <option>2026-04</option>
+                                    </select>
+                                    <select class="proto-input" style="width:140px">
+                                        <option>全部状态</option>
+                                        <option>待确认</option>
+                                        <option>已确认</option>
+                                        <option>已推送</option>
+                                    </select>
+                                    <button class="proto-btn proto-btn-primary">同步合同数据</button>
+                                    <button class="proto-btn">导出 Excel</button>
+                                </div>
+                                <table class="proto-table">
+                                    <thead>
+                                        <tr>
+                                            <th>合同ID</th>
+                                            <th>账户ID</th>
+                                            <th>业务线</th>
+                                            <th>币种</th>
+                                            <th>预估收入(USD)</th>
+                                            <th>预估成本(USD)</th>
+                                            <th>预估利润(USD)</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>S003117</td>
+                                            <td>624</td>
+                                            <td>广告-miads</td>
+                                            <td>USD</td>
+                                            <td class="amount-positive">$12,345.67</td>
+                                            <td>$8,234.56</td>
+                                            <td class="amount-positive">$4,111.11</td>
+                                            <td><span class="proto-status proto-status-pending">待确认</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">查看/调整</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td>S002815</td>
+                                            <td>624(新米)</td>
+                                            <td>广告-miads</td>
+                                            <td>USD</td>
+                                            <td class="amount-positive">$5,678.90</td>
+                                            <td>$3,456.78</td>
+                                            <td class="amount-positive">$2,222.12</td>
+                                            <td><span class="proto-status proto-status-ok">已确认</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td>S001739</td>
+                                            <td>54</td>
+                                            <td>广告-miads</td>
+                                            <td>USD</td>
+                                            <td class="amount-positive">$3,210.00</td>
+                                            <td>$2,100.00</td>
+                                            <td class="amount-positive">$1,110.00</td>
+                                            <td><span class="proto-status proto-status-ok">已推送</span></td>
+                                            <td><span style="color:var(--gray);font-size:12px">已锁定</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>未匹配</td>
+                                            <td>9999</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td class="amount-zero">-</td>
+                                            <td class="amount-zero">-</td>
+                                            <td class="amount-zero">-</td>
+                                            <td><span class="proto-status proto-status-error">未匹配</span></td>
+                                            <td><span style="color:var(--gray);font-size:12px">需补合同</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+                                    <span style="font-size:13px;color:var(--gray)">共 4 条 | 预估总收入: $21,234.57 | 预估总成本: $13,791.34</span>
+                                    <div style="display:flex;gap:8px">
+                                        <button class="proto-btn proto-btn-primary">一键推送全部已确认</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 原型2: 预估调整弹窗 -->
+                <h3>5.2 预估调整弹窗</h3>
+                <div class="prototype">
+                    <div class="prototype-title">点击"查看/调整"后弹出</div>
+                    <div class="proto-page" style="position:relative;min-height:400px">
+                        <div class="proto-header">
+                            <span>预估结果详情 — S003117 / 2026-06</span>
+                            <span style="cursor:pointer;font-size:18px">✕</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <div class="tip tip-info" style="margin-bottom:16px">
+                                <span class="tip-icon">💲</span>
+                                <div>将为账户 <strong>624</strong> 推送预估收入 <strong class="amount-positive">$12,345.67</strong> 到财务系统</div>
+                            </div>
+
+                            <div class="proto-form-group">
+                                <label class="proto-label">合同信息</label>
+                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
+                                    <div>合同ID: <strong>S003117</strong></div>
+                                    <div>账户ID: <strong>624</strong></div>
+                                    <div>币种: <strong>USD</strong></div>
+                                </div>
+                            </div>
+
+                            <hr style="margin:16px 0">
+
+                            <div class="proto-form-group">
+                                <label class="proto-label">计提数据明细</label>
+                                <table class="proto-table">
+                                    <thead>
+                                        <tr>
+                                            <th>月份</th>
+                                            <th>媒体</th>
+                                            <th>国家</th>
+                                            <th>消耗</th>
+                                            <th>收入</th>
+                                            <th>返点系数</th>
+                                            <th>预估收入(USD)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2026-06</td>
+                                            <td>Mintegral</td>
+                                            <td>IN</td>
+                                            <td>$5,000</td>
+                                            <td>$6,500</td>
+                                            <td>0.15</td>
+                                            <td class="amount-positive">$5,525.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2026-06</td>
+                                            <td>Unity</td>
+                                            <td>BR</td>
+                                            <td>$3,200</td>
+                                            <td>$4,100</td>
+                                            <td>0.10</td>
+                                            <td class="amount-positive">$3,690.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2026-06</td>
+                                            <td>Applovin</td>
+                                            <td>ID</td>
+                                            <td>$2,800</td>
+                                            <td>$3,500</td>
+                                            <td>0.12</td>
+                                            <td class="amount-positive">$3,080.00</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="font-weight:600;background:#f1f3f4">
+                                            <td colspan="6" style="text-align:right">预估收入合计</td>
+                                            <td class="amount-positive">$12,295.00</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <hr style="margin:16px 0">
+
+                            <div class="proto-form-group">
+                                <label class="proto-label">手动调整（可选）</label>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                                    <div>
+                                        <label class="proto-label" style="font-weight:normal;color:var(--gray)">系统预估收入</label>
+                                        <input class="proto-input" value="$12,295.00" disabled style="background:#f1f3f4">
+                                    </div>
+                                    <div>
+                                        <label class="proto-label" style="font-weight:normal;color:var(--gray)">调整后收入（USD）</label>
+                                        <input class="proto-input" value="" placeholder="留空则使用系统预估值">
+                                    </div>
+                                </div>
+                                <div style="margin-top:10px">
+                                    <label class="proto-label" style="font-weight:normal;color:var(--gray)">调整原因</label>
+                                    <input class="proto-input" placeholder="如需调整，请填写原因">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="proto-modal-footer">
+                            <button class="proto-btn">取消</button>
+                            <button class="proto-btn">保存调整</button>
+                            <button class="proto-btn proto-btn-primary">确认推送财务</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 原型3: 合同管理页 -->
+                <h3>5.3 合同管理页</h3>
+                <div class="prototype">
+                    <div class="prototype-title">合同管理 — 从CRM同步的合同信息</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>合同管理</span>
+                        </div>
+                        <div class="proto-toolbar">
+                            <input class="proto-input" style="width:200px" placeholder="搜索合同ID/账户ID">
+                            <select class="proto-input" style="width:120px">
+                                <option>全部状态</option>
+                                <option>已匹配</option>
+                                <option>未匹配</option>
+                            </select>
+                            <button class="proto-btn proto-btn-primary">从CRM同步</button>
+                            <button class="proto-btn">导出</button>
+                        </div>
+                        <table class="proto-table">
+                            <thead>
+                                <tr>
+                                    <th>合同ID</th>
+                                    <th>账户ID</th>
+                                    <th>客户名称</th>
+                                    <th>币种</th>
+                                    <th>结算方式</th>
+                                    <th>计提标记</th>
+                                    <th>最近同步时间</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>S003117</td>
+                                    <td>624</td>
+                                    <td>小米东风</td>
+                                    <td>USD</td>
+                                    <td>月结</td>
+                                    <td>✅ 需要计提</td>
+                                    <td>2026-06-04 10:00</td>
+                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
+                                </tr>
+                                <tr>
+                                    <td>S002815</td>
+                                    <td>624(新米)</td>
+                                    <td>小米东风</td>
+                                    <td>USD</td>
+                                    <td>月结</td>
+                                    <td>✅ 需要计提</td>
+                                    <td>2026-06-04 10:00</td>
+                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
+                                </tr>
+                                <tr>
+                                    <td>S001739</td>
+                                    <td>54</td>
+                                    <td>RTA拉活</td>
+                                    <td>USD</td>
+                                    <td>月结</td>
+                                    <td>✅ 需要计提</td>
+                                    <td>2026-06-04 10:00</td>
+                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
+                                </tr>
+                                <tr>
+                                    <td>S001740</td>
+                                    <td>54(RTA拉新)</td>
+                                    <td>RTA拉新</td>
+                                    <td>USD</td>
+                                    <td>月结</td>
+                                    <td>✅ 需要计提</td>
+                                    <td>2026-06-04 10:00</td>
+                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
+                                </tr>
+                                <tr>
+                                    <td>未匹配</td>
+                                    <td>9999</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>❌ 无合同</td>
+                                    <td>-</td>
+                                    <td><span class="proto-status proto-status-error">未匹配</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 原型4: 公式配置页 -->
+                <h3>5.4 公式配置页</h3>
+                <div class="prototype">
+                    <div class="prototype-title">公式配置 — 按业务线配置预估计算公式</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>公式配置</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                                <span style="font-size:14px;color:var(--gray)">每个业务线可独立配置预估收入/成本的计算公式</span>
+                                <button class="proto-btn proto-btn-primary">+ 新增业务线公式</button>
+                            </div>
+
+                            <!-- 公式卡片1 -->
+                            <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                                    <div>
+                                        <strong style="font-size:15px">广告-miads</strong>
+                                        <span class="proto-status proto-status-ok" style="margin-left:8px">启用中</span>
+                                    </div>
+                                    <div style="display:flex;gap:6px">
+                                        <button class="proto-btn" style="font-size:12px">编辑</button>
+                                        <button class="proto-btn" style="font-size:12px;color:var(--warning)">停用</button>
+                                    </div>
+                                </div>
+                                <div style="background:#f8f9fa;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;line-height:2">
+                                    <div><strong>预估收入</strong> = 收入金额 × (1 - 返点系数) × 汇率</div>
+                                    <div><strong>预估成本</strong> = 消耗金额 × 成本系数 × 汇率</div>
+                                    <div><strong>预估利润</strong> = 预估收入 - 预估成本</div>
+                                </div>
+                                <div style="margin-top:8px;font-size:12px;color:var(--gray)">
+                                    适用账户：624, 54, 6208, ... | 汇率来源：平台汇率配置 | 更新时间：2026-06-01
+                                </div>
+                            </div>
+
+                            <!-- 公式卡片2 -->
+                            <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                                    <div>
+                                        <strong style="font-size:15px">offline</strong>
+                                        <span class="proto-status proto-status-ok" style="margin-left:8px">启用中</span>
+                                    </div>
+                                    <div style="display:flex;gap:6px">
+                                        <button class="proto-btn" style="font-size:12px">编辑</button>
+                                        <button class="proto-btn" style="font-size:12px;color:var(--warning)">停用</button>
+                                    </div>
+                                </div>
+                                <div style="background:#f8f9fa;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;line-height:2">
+                                    <div><strong>预估收入</strong> = 消耗金额 × 分成比例 × 汇率</div>
+                                    <div><strong>预估成本</strong> = 消耗金额 × 汇率</div>
+                                </div>
+                                <div style="margin-top:8px;font-size:12px;color:var(--gray)">
+                                    适用账户：all offline | 汇率来源：平台汇率配置 | 更新时间：2026-05-20
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 原型5: 推送记录页 -->
+                <h3>5.5 推送记录页</h3>
+                <div class="prototype">
+                    <div class="prototype-title">推送记录 — 历史推送财务记录</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>推送记录</span>
+                        </div>
+                        <div class="proto-toolbar">
+                            <select class="proto-input" style="width:120px">
+                                <option>全部状态</option>
+                                <option>成功</option>
+                                <option>失败</option>
+                            </select>
+                            <input class="proto-input" style="width:140px" type="month" value="2026-06">
+                            <button class="proto-btn">导出</button>
+                        </div>
+                        <table class="proto-table">
+                            <thead>
+                                <tr>
+                                    <th>推送时间</th>
+                                    <th>合同ID</th>
+                                    <th>账户ID</th>
+                                    <th>计提月份</th>
+                                    <th>预估收入(USD)</th>
+                                    <th>推送人</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2026-06-04 14:30</td>
+                                    <td>S001739</td>
+                                    <td>54</td>
+                                    <td>2026-05</td>
+                                    <td class="amount-positive">$3,210.00</td>
+                                    <td>张三</td>
+                                    <td><span class="proto-status proto-status-ok">推送成功</span></td>
+                                    <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
+                                </tr>
+                                <tr>
+                                    <td>2026-06-04 14:28</td>
+                                    <td>S002815</td>
+                                    <td>624(新米)</td>
+                                    <td>2026-05</td>
+                                    <td class="amount-positive">$5,678.90</td>
+                                    <td>张三</td>
+                                    <td><span class="proto-status proto-status-ok">推送成功</span></td>
+                                    <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
+                                </tr>
+                                <tr>
+                                    <td>2026-06-04 14:25</td>
+                                    <td>S004174</td>
+                                    <td>11</td>
+                                    <td>2026-05</td>
+                                    <td class="amount-negative">-$890.00</td>
+                                    <td>张三</td>
+                                    <td><span class="proto-status proto-status-error">推送失败</span></td>
+                                    <td><a href="#" style="color:var(--warning);font-size:12px">重试</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
