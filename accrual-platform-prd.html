@@ -1048,6 +1048,14 @@ flowchart TD
             document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
+            // Re-render mermaid diagrams in newly visible tab
+            setTimeout(() => {
+                const container = document.getElementById(tabId);
+                const unrendered = container.querySelectorAll('.mermaid:not([data-processed])');
+                if (unrendered.length > 0) {
+                    mermaid.run({ nodes: unrendered });
+                }
+            }, 50);
         }
     </script>
 </body>
