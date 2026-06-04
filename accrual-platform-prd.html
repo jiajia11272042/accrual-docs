@@ -357,32 +357,32 @@
                 <h3>1.3 系统边界</h3>
                 <div class="mermaid">
 graph LR
-    subgraph DataTeam ["数据组（数据侧）"]
-        A["原始消耗数据<br/>激活/点击/消耗"]
-        B["配置文件<br/>媒体替换/国家替换/返点系数"]
-        C["数据预处理<br/>媒体/广告位替换<br/>国家替换<br/>MSA收入分成<br/>返点系数计算"]
-        D["计提基础数据输出<br/>国家×媒体×账户×日"]
+    subgraph DataTeam ["Data Team"]
+        A["Raw Consumption Data: Activations / Clicks / Spend"]
+        B["Config Files: Media Replace / Country Replace / Rebate"]
+        C["Data Preprocessing: Media Replace / Country Replace / MSA Split / Rebate"]
+        D["Output Base Data: Country x Media x Account x Day"]
     end
 
-    subgraph CRM ["CRM系统（现有）"]
-        E["合同管理<br/>合同ID/账户/币种/结算方式"]
-        F["汇率配置"]
+    subgraph CRM ["CRM System (Existing)"]
+        E["Contract Mgmt: ContractID / Account / Currency / Settlement"]
+        F["Exchange Rate Config"]
     end
 
-    subgraph Platform ["计提平台（新）"]
-        G["合同信息匹配"]
-        H["汇率转换"]
-        I["预估计算<br/>（业务线公式配置）"]
-        J["预估结果确认<br/>手动调整（可选）"]
-        K["推送财务系统"]
+    subgraph Platform ["Accrual Platform (New)"]
+        G["Contract Match"]
+        H["Exchange Rate Convert"]
+        I["Estimate Calc (Business Formula)"]
+        J["Estimate Confirm (Manual Adjust)"]
+        K["Push to Finance"]
     end
 
     A --> C
     B --> C
     C --> D
-    D -->|基础数据| G
-    E -->|合同信息| G
-    F -->|汇率| H
+    D -->|Base Data| G
+    E -->|Contract Info| G
+    F -->|Rate| H
     G --> H
     H --> I
     I --> J
@@ -418,12 +418,12 @@ graph LR
                 <h3>2.2 数据预处理</h3>
                 <div class="mermaid">
 graph TD
-    A["原始消耗数据<br/>媒体名/国家/账户/消耗额/激活数"] --> B["媒体替换<br/>将原始媒体名映射为标准媒体名"]
-    B --> C["广告位替换<br/>TagID → 标准广告位"]
-    C --> D["国家替换<br/>原始国家码 → 标准国家"]
-    D --> E["MSA收入分成<br/>按分成比例拆分收入"]
-    E --> F["返点系数计算<br/>按配置计算返点"]
-    F --> G["计提基础数据输出<br/>国家×媒体×账户×日"]
+    A["Raw Data: Media / Country / Account / Spend / Activations"] --> B["Media Replace: Map to Standard Media Name"]
+    B --> C["Ad Slot Replace: TagID to Standard Slot"]
+    C --> D["Country Replace: Raw Code to Standard Country"]
+    D --> E["MSA Revenue Split: Split by Ratio"]
+    E --> F["Rebate Calc: Apply Rebate Coefficient"]
+    F --> G["Output: Country x Media x Account x Day"]
 
     style A fill:#fef7e0,stroke:#f9ab00
     style G fill:#e6f4ea,stroke:#34a853
@@ -521,29 +521,29 @@ graph TD
             <div class="card">
                 <h2>4. 核心流程</h2>
 
-                <h3>4.1 计提全流程</h3>
+                <h3>4.1 Full Accrual Flow</h3>
                 <div class="mermaid">
 graph TD
-    subgraph DataFlow ["数据组流程"]
-        A1["每日消耗数据导入"] --> A2["媒体/国家替换"]
-        A2 --> A3["MSA分成 + 返点系数"]
-        A3 --> A4["输出计提基础数据<br/>国家×媒体×账户×日"]
+    subgraph DataFlow ["Data Team"]
+        A1["Daily Consumption Data"] --> A2["Media / Country Replace"]
+        A2 --> A3["MSA Split + Rebate"]
+        A3 --> A4["Output Base Data: Country x Media x Account x Day"]
     end
 
-    subgraph PlatformFlow ["平台组流程"]
-        B1["接收基础数据"] --> B2["合同信息匹配<br/>account_id → contract_id"]
-        B2 --> B3{"匹配成功？"}
-        B3 -->|是| B4["汇率转换<br/>非USD → USD"]
-        B3 -->|否| B5["标记为"未匹配"<br/>跳过计提"]
-        B4 --> B6["预估计算<br/>按业务线公式"]
-        B6 --> B7["预估结果列表<br/>合同×月份×金额"]
-        B7 --> B8{"需要调整？"}
-        B8 -->|否| B9["确认推送"]
-        B8 -->|是| B10["手动调整金额"]
-        B10 --> B11["保存调整记录"]
+    subgraph PlatformFlow ["Platform Team"]
+        B1["Receive Base Data"] --> B2["Contract Match: account_id -> contract_id"]
+        B2 --> B3{"Match OK?"}
+        B3 -->|Yes| B4["Exchange Rate: non-USD -> USD"]
+        B3 -->|No| B5["Mark Unmatched, Skip"]
+        B4 --> B6["Estimate Calc by Business Formula"]
+        B6 --> B7["Result List: Contract x Month x Amount"]
+        B7 --> B8{"Need Adjust?"}
+        B8 -->|No| B9["Confirm Push"]
+        B8 -->|Yes| B10["Manual Adjust Amount"]
+        B10 --> B11["Save Adjust Record"]
         B11 --> B9
-        B9 --> B12["推送财务系统"]
-        B12 --> B13["更新状态为"已推送""]
+        B9 --> B12["Push to Finance System"]
+        B12 --> B13["Status = Pushed, Month Locked"]
     end
 
     A4 --> B1
@@ -552,16 +552,16 @@ graph TD
     style PlatformFlow fill:#e8f0fe,stroke:#1a73e8
                 </div>
 
-                <h3>4.2 合同匹配流程</h3>
+                <h3>4.2 Contract Match Flow</h3>
                 <div class="mermaid">
 flowchart TD
-    Start["接收基础数据"] --> Query["查询CRM合同表<br/>WHERE account_id = ?"]
-    Query --> Found{"找到合同？"}
-    Found -->|是| Bind["绑定合同ID<br/>读取币种/结算方式/计提标记"]
-    Bind --> CheckFlag{"需要计提？"}
-    CheckFlag -->|是| Pass["进入汇率转换"]
-    CheckFlag -->|否| Skip["标记：不需要计提"]
-    Found -->|否| NoMatch["标记：未匹配合同"]
+    Start["Receive Base Data"] --> Query["Query CRM Contract Table WHERE account_id = ?"]
+    Query --> Found{"Found?"}
+    Found -->|Yes| Bind["Bind Contract ID, Read Currency / Settlement"]
+    Bind --> CheckFlag{"Accrual Needed?"}
+    CheckFlag -->|Yes| Pass["Go to Exchange Rate"]
+    CheckFlag -->|No| Skip["Mark: No Accrual"]
+    Found -->|No| NoMatch["Mark: Unmatched Contract"]
 
     style Start fill:#e8f0fe,stroke:#1a73e8
     style Pass fill:#e6f4ea,stroke:#34a853
@@ -569,36 +569,36 @@ flowchart TD
     style NoMatch fill:#fce8e6,stroke:#ea4335
                 </div>
 
-                <h3>4.3 预估计算流程</h3>
+                <h3>4.3 Estimate Calculation Flow</h3>
                 <div class="mermaid">
 flowchart TD
-    Input["合同 × 月份 × 基础数据"] --> LoadFormula["加载业务线计算公式"]
-    LoadFormula --> CalcType{"合同类型？"}
-    CalcType -->|收入合同| RevCalc["预估收入 = 收入 × (1-返点) × 汇率"]
-    CalcType -->|成本合同| CostCalc["预估成本 = 消耗 × 成本系数 × 汇率"]
-    RevCalc --> Merge["汇总到合同×月份维度"]
+    Input["Contract x Month x Base Data"] --> LoadFormula["Load Business Line Formula"]
+    LoadFormula --> CalcType{"Contract Type?"}
+    CalcType -->|Revenue| RevCalc["Est Revenue = Revenue x (1-Rebate) x Rate"]
+    CalcType -->|Cost| CostCalc["Est Cost = Spend x CostRatio x Rate"]
+    RevCalc --> Merge["Aggregate to Contract x Month"]
     CostCalc --> Merge
-    Merge --> Result["输出预估结果<br/>预估收入/预估成本/预估利润"]
+    Merge --> Result["Output: Est Revenue / Est Cost / Est Profit"]
 
     style Input fill:#e8f0fe,stroke:#1a73e8
     style Result fill:#e6f4ea,stroke:#34a853
                 </div>
 
-                <h3>4.4 手动调整 & 推送流程</h3>
+                <h3>4.4 Manual Adjust and Push Flow</h3>
                 <div class="mermaid">
 flowchart TD
-    Show["展示预估结果列表"] --> UserCheck{"运营是否调整？"}
-    UserCheck -->|否| Confirm["点击"确认推送""]
-    UserCheck -->|是| Edit["修改预估金额"]
-    Edit --> Reason["填写调整原因"]
-    Reason --> Save["保存调整记录"]
+    Show["Show Estimate Result List"] --> UserCheck{"Adjust?"}
+    UserCheck -->|No| Confirm["Click Confirm Push"]
+    UserCheck -->|Yes| Edit["Edit Estimate Amount"]
+    Edit --> Reason["Fill Adjust Reason"]
+    Reason --> Save["Save Adjust Record"]
     Save --> Confirm
-    Confirm --> PreCheck{"推送前校验"}
-    PreCheck -->|通过| Push["调用财务系统API"]
-    PreCheck -->|失败| Block["提示缺失项<br/>（合同/汇率/金额）"]
-    Push --> PushResult{"推送结果"}
-    PushResult -->|成功| Done["状态 → 已推送<br/>月份锁定"]
-    PushResult -->|失败| Retry["标记推送失败<br/>支持重试"]
+    Confirm --> PreCheck{"Pre-push Validation"}
+    PreCheck -->|Pass| Push["Call Finance API"]
+    PreCheck -->|Fail| Block["Show Missing: Contract / Rate / Amount"]
+    Push --> PushResult{"Push Result"}
+    PushResult -->|OK| Done["Status = Pushed, Month Locked"]
+    PushResult -->|Fail| Retry["Mark Failed, Support Retry"]
 
     style Show fill:#e8f0fe,stroke:#1a73e8
     style Done fill:#e6f4ea,stroke:#34a853
