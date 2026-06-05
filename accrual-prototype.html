@@ -321,7 +321,7 @@
         <span class="step-bar-title">计提平台操作流程</span>
         <span class="step-item active" onclick="goStep(1)">1 同步合同</span>
         <span class="step-arrow">→</span>
-        <span class="step-item pending" onclick="goStep(2)">2 上传基础数据</span>
+        <span class="step-item pending" onclick="goStep(2)">2 Pull Data & Config</span>
         <span class="step-arrow">→</span>
         <span class="step-item pending" onclick="goStep(3)">3 查看预估结果</span>
         <span class="step-arrow">→</span>
@@ -365,84 +365,92 @@
                 </div>
 
                 <div style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border)">
-                    <button class="btn btn-primary" id="btn-step1-next" disabled onclick="goStep(2)">下一步: 上传基础数据 →</button>
+                    <button class="btn btn-primary" id="btn-step1-next" disabled onclick="goStep(2)">Next: Pull Data & Config →</button>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== Step 2: 上传基础数据 ==================== -->
+        <!-- ==================== Step 2: 拉取数据 + 确认公式/汇率 ==================== -->
         <div id="step2" class="step-page">
             <div class="instruction">
-                <strong>Step 2: 上传计提基础数据</strong>
-                <p>将数据组产出的基础数据（国家×媒体×账户×日）上传到平台。平台会自动执行合同匹配和汇率转换。</p>
+                <strong>Step 2: Pull Base Data and Confirm Config</strong>
+                <p>Click "Pull Data" to fetch base data from data team API. Then confirm formula and exchange rate. After confirmation, estimates will be calculated automatically.</p>
             </div>
 
             <div class="page-header">
-                <span class="page-header-title">数据导入</span>
+                <span class="page-header-title">Data Pull & Config</span>
             </div>
             <div class="page-body">
                 <div class="toolbar">
-                    <button class="btn btn-primary" onclick="uploadData()">上传基础数据文件</button>
-                    <span id="uploadStatus" style="font-size:12px;color:var(--gray);margin-left:8px"></span>
+                    <button class="btn btn-primary" onclick="pullData()">Pull Base Data</button>
+                    <span id="pullStatus" style="font-size:12px;color:var(--gray);margin-left:8px"></span>
                 </div>
 
-                <div id="uploadArea" style="padding:40px;text-align:center;color:var(--gray)">
-                    <p style="font-size:40px;margin-bottom:12px">📄</p>
-                    <p style="font-size:14px;margin-bottom:4px">拖拽文件到此处，或点击上方按钮选择文件</p>
-                    <p style="font-size:12px">支持 CSV / Excel 格式，字段：media_type, region, account_id, dsp_fee, dsp_active, date</p>
+                <div id="pullArea" style="padding:40px;text-align:center;color:var(--gray)">
+                    <p style="font-size:40px;margin-bottom:12px">🔄</p>
+                    <p style="font-size:14px;margin-bottom:4px">Click "Pull Base Data" to fetch from data team API</p>
+                    <p style="font-size:12px">Data source: Country x Media x Account x Day base data</p>
                 </div>
 
-                <div id="matchResult" style="display:none;padding:20px">
+                <div id="configArea" style="display:none;padding:20px">
                     <div class="alert alert-success">
                         <span class="alert-icon">✅</span>
                         <div>
-                            <strong>数据匹配完成</strong><br>
-                            共处理 <strong id="totalRows">0</strong> 条记录，
-                            匹配成功 <strong style="color:var(--success)" id="matchedRows">0</strong> 条，
-                            未匹配 <strong style="color:var(--warning)" id="unmatchedRows">0</strong> 条
+                            <strong>Data pulled successfully</strong> — 6 records, 5 matched, 1 unmatched
                         </div>
                     </div>
 
-                    <div class="summary-row">
-                        <div class="summary-card">
-                            <div class="label">总记录数</div>
-                            <div class="value blue" id="sum-total">0</div>
+                    <!-- Formula Config -->
+                    <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:16px 0">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                            <strong style="font-size:14px">Business Line Formula: miads</strong>
+                            <span class="badge badge-success">Active</span>
                         </div>
-                        <div class="summary-card">
-                            <div class="label">匹配成功</div>
-                            <div class="value green" id="sum-matched">0</div>
+                        <div style="background:#f8f9fa;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;line-height:2">
+                            <div><strong>Est Revenue</strong> = Revenue x (1 - Rebate) x Rate</div>
+                            <div><strong>Est Cost</strong> = Spend x CostRatio x Rate</div>
                         </div>
-                        <div class="summary-card">
-                            <div class="label">未匹配</div>
-                            <div class="value red" id="sum-unmatched">0</div>
-                        </div>
-                        <div class="summary-card">
-                            <div class="label">汇率转换</div>
-                            <div class="value orange" id="sum-converted">0</div>
-                        </div>
+                        <div style="margin-top:8px;font-size:12px;color:var(--gray)">Applied to: 624, 54, 11, 6208, ...</div>
                     </div>
 
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Media</th>
-                                <th>Country</th>
-                                <th>Account ID</th>
-                                <th>Spend</th>
-                                <th>Activations</th>
-                                <th>Date</th>
-                                <th>Contract</th>
-                                <th>Rate</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matchTableBody"></tbody>
-                    </table>
+                    <!-- Exchange Rate Config -->
+                    <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:16px 0">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                            <strong style="font-size:14px">Exchange Rate</strong>
+                            <button class="btn btn-sm" onclick="showToast('Rate config page','info')">Edit</button>
+                        </div>
+                        <table class="data-table" style="font-size:13px">
+                            <thead><tr><th>Currency</th><th>Rate to USD</th><th>Source</th><th>Updated</th></tr></thead>
+                            <tbody>
+                                <tr><td>USD</td><td>1.000000</td><td>System</td><td>-</td></tr>
+                                <tr><td>CNY</td><td>0.138000</td><td>Manual</td><td>2026-06-01</td></tr>
+                                <tr><td>INR</td><td>0.012000</td><td>Manual</td><td>2026-06-01</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Matched Data Preview -->
+                    <div style="margin-top:16px">
+                        <strong style="font-size:14px">Matched Data Preview</strong>
+                        <table class="data-table" style="margin-top:8px">
+                            <thead>
+                                <tr><th>Media</th><th>Country</th><th>Account</th><th>Spend</th><th>Revenue</th><th>Rebate</th><th>Contract</th><th>Currency</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Mintegral</td><td>IN</td><td>624</td><td>$5,000</td><td>$6,500</td><td>15%</td><td>S003117</td><td>USD</td></tr>
+                                <tr><td>Unity</td><td>BR</td><td>624</td><td>$3,200</td><td>$4,100</td><td>10%</td><td>S003117</td><td>USD</td></tr>
+                                <tr><td>Applovin</td><td>ID</td><td>624(new)</td><td>$2,800</td><td>$3,500</td><td>12%</td><td>S002815</td><td>USD</td></tr>
+                                <tr><td>Facebook</td><td>US</td><td>54</td><td>$4,100</td><td>$5,200</td><td>8%</td><td>S001739</td><td>USD</td></tr>
+                                <tr><td>Google</td><td>JP</td><td>11</td><td>¥130,000</td><td>¥165,000</td><td>12%</td><td>S004174</td><td>CNY</td></tr>
+                                <tr style="background:#fff5f5"><td>TikTok</td><td>TH</td><td>9999</td><td>฿50,000</td><td>฿65,000</td><td>-</td><td style="color:var(--warning)">Unmatched</td><td>-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div style="padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border)">
-                    <button class="btn" onclick="goStep(1)">← 上一步</button>
-                    <button class="btn btn-primary" id="btn-step2-next" disabled onclick="goStep(3)">下一步: 查看预估结果 →</button>
+                    <button class="btn" onclick="goStep(1)">← Back</button>
+                    <button class="btn btn-primary" id="btn-step2-next" disabled onclick="goStep(3)">Confirm & View Estimates →</button>
                 </div>
             </div>
         </div>
@@ -816,8 +824,8 @@
             goStep(1);
             document.getElementById('contractTable').innerHTML = '<div style="padding:60px;text-align:center;color:var(--gray)"><p style="font-size:16px;margin-bottom:8px">No contract data</p><p style="font-size:13px">Click "Sync from CRM" above</p></div>';
             document.getElementById('btn-step1-next').disabled = true;
-            document.getElementById('matchResult').style.display = 'none';
-            document.getElementById('uploadArea').style.display = '';
+            document.getElementById('configArea').style.display = 'none';
+            document.getElementById('pullArea').style.display = '';
             document.getElementById('btn-step2-next').disabled = true;
             document.getElementById('pushConfirm').style.display = '';
             document.getElementById('pushDone').style.display = 'none';
@@ -851,36 +859,20 @@
             }, 1200);
         }
 
-        // Step 2: Upload
-        function uploadData() {
-            const el = document.getElementById('uploadStatus');
-            el.textContent = 'Processing...';
+        // Step 2: Pull Data
+        function pullData() {
+            const el = document.getElementById('pullStatus');
+            el.textContent = 'Pulling from API...';
             el.style.color = 'var(--orange)';
             document.getElementById('btn-step2-next').disabled = true;
             setTimeout(() => {
-                el.textContent = 'Done';
+                el.textContent = 'Done — 6 records pulled';
                 el.style.color = 'var(--success)';
-                document.getElementById('uploadArea').style.display = 'none';
-                document.getElementById('matchResult').style.display = '';
-                const total = matchData.length;
-                const matched = matchData.filter(d => d.status === 'ok').length;
-                const unmatched = total - matched;
-                document.getElementById('totalRows').textContent = total;
-                document.getElementById('matchedRows').textContent = matched;
-                document.getElementById('unmatchedRows').textContent = unmatched;
-                document.getElementById('sum-total').textContent = total;
-                document.getElementById('sum-matched').textContent = matched;
-                document.getElementById('sum-unmatched').textContent = unmatched;
-                document.getElementById('sum-converted').textContent = matched;
-                let tbody = '';
-                matchData.forEach(d => {
-                    const cls = d.status === 'ok' ? '' : ' style="background:#fff5f5"';
-                    tbody += '<tr' + cls + '><td>' + d.media + '</td><td>' + d.country + '</td><td>' + d.account + '</td><td>$' + d.spend.toLocaleString() + '</td><td>' + d.act + '</td><td>' + d.date + '</td><td>' + d.contract + '</td><td>' + d.rate + '</td><td>' + (d.status === 'ok' ? '<span class="badge badge-success">Matched</span>' : '<span class="badge badge-danger">Unmatched</span>') + '</td></tr>';
-                });
-                document.getElementById('matchTableBody').innerHTML = tbody;
+                document.getElementById('pullArea').style.display = 'none';
+                document.getElementById('configArea').style.display = '';
                 document.getElementById('btn-step2-next').disabled = false;
-                showToast('Data matched: ' + matched + '/' + total, 'success');
-            }, 1500);
+                showToast('Base data pulled: 6 records', 'success');
+            }, 1200);
         }
 
         // Step 4: Adjust
