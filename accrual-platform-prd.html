@@ -1041,21 +1041,32 @@ flowchart TD
     </div>
 
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        // Step 1: Show all tabs temporarily so mermaid can find and render them
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.style.display = 'block';
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+        });
+
+        // Step 2: Initialize mermaid and render all diagrams
+        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+        mermaid.run().then(() => {
+            // Step 3: Restore normal tab behavior
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.style.display = '';
+                el.style.position = '';
+                el.style.left = '';
+            });
+            // Only show active tab
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('overview').classList.add('active');
+        });
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
-            // Re-render mermaid diagrams in newly visible tab
-            setTimeout(() => {
-                const container = document.getElementById(tabId);
-                const unrendered = container.querySelectorAll('.mermaid:not([data-processed])');
-                if (unrendered.length > 0) {
-                    mermaid.run({ nodes: unrendered });
-                }
-            }, 50);
         }
     </script>
 </body>

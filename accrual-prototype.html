@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计提平台原型 - 可交互</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --warning: #ea4335;
+            --warning-light: #fce8e6;
+            --success: #34a853;
+            --success-light: #e6f4ea;
+            --orange: #f9ab00;
+            --orange-light: #fef7e0;
+            --gray: #5f6368;
+            --gray-light: #f8f9fa;
+            --border: #dadce0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #202124;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        /* Step indicator */
+        .step-bar {
+            background: #16213e;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #2a2a4a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .step-bar-title {
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            margin-right: 16px;
+            white-space: nowrap;
+        }
+        .step-item {
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .step-item:hover { color: #ccc; background: rgba(255,255,255,0.05); }
+        .step-item.active {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        .step-item.done {
+            background: var(--success);
+            color: white;
+        }
+        .step-item.pending {
+            border: 1px dashed #555;
+        }
+        .step-arrow { color: #555; font-size: 12px; }
+        .step-reset {
+            margin-left: auto;
+            padding: 6px 14px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
+            border: 1px solid #444;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .step-reset:hover { background: rgba(255,255,255,0.2); color: white; }
+
+        /* Page container */
+        .page-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Step pages */
+        .step-page { display: none; }
+        .step-page.active { display: block; }
+
+        /* Page header */
+        .page-header {
+            background: white;
+            border-radius: 8px 8px 0 0;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .page-header-title { font-weight: 700; font-size: 16px; color: var(--primary); }
+        .page-header-right { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--gray); }
+
+        /* Page body */
+        .page-body { background: white; border-radius: 0 0 8px 8px; min-height: 500px; }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 10px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            background: var(--gray-light);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn:hover { background: var(--primary-light); border-color: var(--primary); }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-success { background: var(--success); color: white; border-color: var(--success); }
+        .btn-success:hover { background: #2d8e47; }
+        .btn-danger { background: var(--warning); color: white; border-color: var(--warning); }
+        .btn-danger:hover { background: #c5221f; }
+        .btn-warning { background: var(--orange); color: white; border-color: var(--orange); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th {
+            background: #f1f3f4;
+            padding: 10px 14px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            text-align: left;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+        }
+        .data-table tr:hover td { background: #f0f4ff; }
+        .data-table tr.selected td { background: var(--primary-light); }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-success { background: var(--success-light); color: var(--success); }
+        .badge-warning { background: var(--orange-light); color: #e37400; }
+        .badge-danger { background: var(--warning-light); color: var(--warning); }
+        .badge-info { background: var(--primary-light); color: var(--primary); }
+        .badge-gray { background: #f1f3f4; color: var(--gray); }
+
+        /* Amount colors */
+        .amt-pos { color: var(--success); font-weight: 600; }
+        .amt-neg { color: var(--warning); font-weight: 600; }
+        .amt-zero { color: var(--gray); }
+
+        /* Forms */
+        .form-group { margin-bottom: 14px; }
+        .form-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; display: block; }
+        .form-hint { font-size: 12px; color: var(--gray); margin-top: 3px; }
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+        .form-input:disabled { background: #f1f3f4; color: var(--gray); }
+        select.form-input { cursor: pointer; }
+
+        /* Alert boxes */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 13px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .alert-icon { font-size: 16px; flex-shrink: 0; }
+        .alert-info { background: var(--primary-light); border: 1px solid #aecbfa; }
+        .alert-success { background: var(--success-light); border: 1px solid #a8dab5; }
+        .alert-warning { background: var(--orange-light); border: 1px solid #fdd663; }
+        .alert-danger { background: var(--warning-light); border: 1px solid #f5bcb7; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 60px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 999;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-success { background: var(--success); color: white; }
+        .toast-error { background: var(--warning); color: white; }
+        .toast-info { background: var(--primary); color: white; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 640px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 16px; }
+        .modal-close { cursor: pointer; font-size: 20px; color: var(--gray); padding: 4px; }
+        .modal-close:hover { color: var(--warning); }
+        .modal-body { padding: 20px 24px; }
+        .modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Divider */
+        .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+        /* Summary cards */
+        .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+        .summary-card {
+            background: var(--gray-light);
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .summary-card .label { font-size: 12px; color: var(--gray); margin-bottom: 4px; }
+        .summary-card .value { font-size: 20px; font-weight: 700; }
+        .summary-card .value.green { color: var(--success); }
+        .summary-card .value.blue { color: var(--primary); }
+        .summary-card .value.orange { color: var(--orange); }
+        .summary-card .value.red { color: var(--warning); }
+
+        /* Progress bar */
+        .progress { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .progress-bar.green { background: var(--success); }
+        .progress-bar.blue { background: var(--primary); }
+
+        /* Instruction banner */
+        .instruction {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .instruction strong { font-size: 15px; }
+        .instruction ol { margin: 8px 0 0 20px; }
+        .instruction li { margin: 4px 0; }
+
+        /* Highlight row */
+        .highlight-row { animation: highlightFade 1.5s ease; }
+        @keyframes highlightFade {
+            0% { background: #fff3cd; }
+            100% { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Step bar -->
+    <div class="step-bar">
+        <span class="step-bar-title">计提平台操作流程</span>
+        <span class="step-item active" onclick="goStep(1)">1 同步合同</span>
+        <span class="step-arrow">→</span>
+        <span class="step-item pending" onclick="goStep(2)">2 上传基础数据</span>
+        <span class="step-arrow">→</span>
+        <span class="step-item pending" onclick="goStep(3)">3 查看预估结果</span>
+        <span class="step-arrow">→</span>
+        <span class="step-item pending" onclick="goStep(4)">4 手动调整</span>
+        <span class="step-arrow">→</span>
+        <span class="step-item pending" onclick="goStep(5)">5 推送财务</span>
+        <button class="step-reset" onclick="resetAll()">重置流程</button>
+    </div>
+
+    <div class="page-container">
+
+        <!-- ==================== Step 1: 同步合同 ==================== -->
+        <div id="step1" class="step-page active">
+            <div class="instruction">
+                <strong>Step 1: 从 CRM 同步合同数据</strong>
+                <p>点击"从CRM同步"按钮，系统会自动拉取合同ID、账户ID、币种、结算方式等信息。</p>
+            </div>
+
+            <div class="page-header">
+                <span class="page-header-title">合同管理</span>
+                <span class="page-header-right">计提平台 v2.0</span>
+            </div>
+            <div class="page-body">
+                <div class="toolbar">
+                    <input class="form-input" style="width:200px" placeholder="搜索合同ID/账户ID">
+                    <select class="form-input" style="width:120px">
+                        <option>全部状态</option>
+                        <option>已匹配</option>
+                        <option>未匹配</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="syncContracts()">从CRM同步</button>
+                    <button class="btn" disabled>导出</button>
+                    <span id="syncStatus" style="font-size:12px;color:var(--gray);margin-left:8px"></span>
+                </div>
+
+                <div id="contractTable">
+                    <div style="padding:60px;text-align:center;color:var(--gray)">
+                        <p style="font-size:16px;margin-bottom:8px">暂无合同数据</p>
+                        <p style="font-size:13px">请点击上方"从CRM同步"按钮拉取合同信息</p>
+                    </div>
+                </div>
+
+                <div style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border)">
+                    <button class="btn btn-primary" id="btn-step1-next" disabled onclick="goStep(2)">下一步: 上传基础数据 →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Step 2: 上传基础数据 ==================== -->
+        <div id="step2" class="step-page">
+            <div class="instruction">
+                <strong>Step 2: 上传计提基础数据</strong>
+                <p>将数据组产出的基础数据（国家×媒体×账户×日）上传到平台。平台会自动执行合同匹配和汇率转换。</p>
+            </div>
+
+            <div class="page-header">
+                <span class="page-header-title">数据导入</span>
+            </div>
+            <div class="page-body">
+                <div class="toolbar">
+                    <button class="btn btn-primary" onclick="uploadData()">上传基础数据文件</button>
+                    <span id="uploadStatus" style="font-size:12px;color:var(--gray);margin-left:8px"></span>
+                </div>
+
+                <div id="uploadArea" style="padding:40px;text-align:center;color:var(--gray)">
+                    <p style="font-size:40px;margin-bottom:12px">📄</p>
+                    <p style="font-size:14px;margin-bottom:4px">拖拽文件到此处，或点击上方按钮选择文件</p>
+                    <p style="font-size:12px">支持 CSV / Excel 格式，字段：media_type, region, account_id, dsp_fee, dsp_active, date</p>
+                </div>
+
+                <div id="matchResult" style="display:none;padding:20px">
+                    <div class="alert alert-success">
+                        <span class="alert-icon">✅</span>
+                        <div>
+                            <strong>数据匹配完成</strong><br>
+                            共处理 <strong id="totalRows">0</strong> 条记录，
+                            匹配成功 <strong style="color:var(--success)" id="matchedRows">0</strong> 条，
+                            未匹配 <strong style="color:var(--warning)" id="unmatchedRows">0</strong> 条
+                        </div>
+                    </div>
+
+                    <div class="summary-row">
+                        <div class="summary-card">
+                            <div class="label">总记录数</div>
+                            <div class="value blue" id="sum-total">0</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">匹配成功</div>
+                            <div class="value green" id="sum-matched">0</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">未匹配</div>
+                            <div class="value red" id="sum-unmatched">0</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">汇率转换</div>
+                            <div class="value orange" id="sum-converted">0</div>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Media</th>
+                                <th>Country</th>
+                                <th>Account ID</th>
+                                <th>Spend</th>
+                                <th>Activations</th>
+                                <th>Date</th>
+                                <th>Contract</th>
+                                <th>Rate</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matchTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border)">
+                    <button class="btn" onclick="goStep(1)">← 上一步</button>
+                    <button class="btn btn-primary" id="btn-step2-next" disabled onclick="goStep(3)">下一步: 查看预估结果 →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Step 3: 查看预估结果 ==================== -->
+        <div id="step3" class="step-page">
+            <div class="instruction">
+                <strong>Step 3: 查看预估计算结果</strong>
+                <p>平台根据业务线公式自动计算预估收入/成本。点击"查看明细"可查看详情，确认无误后进入下一步调整。</p>
+            </div>
+
+            <div class="page-header">
+                <span class="page-header-title">预估结果 — 2026-06</span>
+            </div>
+            <div class="page-body">
+                <div class="toolbar">
+                    <select class="form-input" style="width:120px">
+                        <option>2026-06</option>
+                        <option>2026-05</option>
+                    </select>
+                    <button class="btn">导出 Excel</button>
+                </div>
+
+                <div class="summary-row" style="padding:0 20px">
+                    <div class="summary-card">
+                        <div class="label">合同总数</div>
+                        <div class="value blue">4</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">预估总收入</div>
+                        <div class="value green">$24,356.57</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">预估总成本</div>
+                        <div class="value orange">$15,791.34</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">预估利润</div>
+                        <div class="value green">$8,565.23</div>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Contract ID</th>
+                            <th>Account</th>
+                            <th>Business</th>
+                            <th>Currency</th>
+                            <th>Est Revenue</th>
+                            <th>Est Cost</th>
+                            <th>Est Profit</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>S003117</td>
+                            <td>624</td>
+                            <td>miads</td>
+                            <td>USD</td>
+                            <td class="amt-pos">$12,345.67</td>
+                            <td>$8,234.56</td>
+                            <td class="amt-pos">$4,111.11</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openDetail('S003117','624',12345.67,8234.56)">Detail</button></td>
+                        </tr>
+                        <tr>
+                            <td>S002815</td>
+                            <td>624(new)</td>
+                            <td>miads</td>
+                            <td>USD</td>
+                            <td class="amt-pos">$5,678.90</td>
+                            <td>$3,456.78</td>
+                            <td class="amt-pos">$2,222.12</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openDetail('S002815','624(new)',5678.90,3456.78)">Detail</button></td>
+                        </tr>
+                        <tr>
+                            <td>S001739</td>
+                            <td>54</td>
+                            <td>miads</td>
+                            <td>USD</td>
+                            <td class="amt-pos">$3,122.00</td>
+                            <td>$2,100.00</td>
+                            <td class="amt-pos">$1,022.00</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openDetail('S001739','54',3122.00,2100.00)">Detail</button></td>
+                        </tr>
+                        <tr>
+                            <td>S004174</td>
+                            <td>11</td>
+                            <td>miads</td>
+                            <td>CNY</td>
+                            <td class="amt-pos">$3,210.00</td>
+                            <td>$2,000.00</td>
+                            <td class="amt-pos">$1,210.00</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openDetail('S004174','11',3210.00,2000.00)">Detail</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border)">
+                    <button class="btn" onclick="goStep(2)">← 上一步</button>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-success" onclick="goStep(5)">Skip Adjust, Push Directly</button>
+                        <button class="btn btn-primary" onclick="goStep(4)">Next: Manual Adjust →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Step 4: 手动调整 ==================== -->
+        <div id="step4" class="step-page">
+            <div class="instruction">
+                <strong>Step 4: 手动调整预估金额</strong>
+                <p>点击合同行的"Edit"按钮修改预估收入/成本。填写调整原因后保存。调整完成后进入下一步推送财务。</p>
+            </div>
+
+            <div class="page-header">
+                <span class="page-header-title">预估调整 — 2026-06</span>
+            </div>
+            <div class="page-body">
+                <div class="toolbar">
+                    <span style="font-size:13px;color:var(--gray)">点击 Edit 修改预估金额，调整后点击 Save 保存</span>
+                </div>
+
+                <table class="data-table" id="adjustTable">
+                    <thead>
+                        <tr>
+                            <th>Contract</th>
+                            <th>Account</th>
+                            <th>System Est Revenue</th>
+                            <th>Adjusted Revenue</th>
+                            <th>Est Cost</th>
+                            <th>Profit</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="adj-row-1">
+                            <td>S003117</td>
+                            <td>624</td>
+                            <td>$12,345.67</td>
+                            <td id="adj-val-1">$12,345.67</td>
+                            <td>$8,234.56</td>
+                            <td id="adj-profit-1" class="amt-pos">$4,111.11</td>
+                            <td id="adj-reason-1" class="amt-zero">-</td>
+                            <td><span class="badge badge-warning" id="adj-status-1">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openAdjust(1,'S003117',12345.67,8234.56)">Edit</button></td>
+                        </tr>
+                        <tr id="adj-row-2">
+                            <td>S002815</td>
+                            <td>624(new)</td>
+                            <td>$5,678.90</td>
+                            <td id="adj-val-2">$5,678.90</td>
+                            <td>$3,456.78</td>
+                            <td id="adj-profit-2" class="amt-pos">$2,222.12</td>
+                            <td id="adj-reason-2" class="amt-zero">-</td>
+                            <td><span class="badge badge-warning" id="adj-status-2">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openAdjust(2,'S002815',5678.90,3456.78)">Edit</button></td>
+                        </tr>
+                        <tr id="adj-row-3">
+                            <td>S001739</td>
+                            <td>54</td>
+                            <td>$3,122.00</td>
+                            <td id="adj-val-3">$3,122.00</td>
+                            <td>$2,100.00</td>
+                            <td id="adj-profit-3" class="amt-pos">$1,022.00</td>
+                            <td id="adj-reason-3" class="amt-zero">-</td>
+                            <td><span class="badge badge-warning" id="adj-status-3">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openAdjust(3,'S001739',3122.00,2100.00)">Edit</button></td>
+                        </tr>
+                        <tr id="adj-row-4">
+                            <td>S004174</td>
+                            <td>11</td>
+                            <td>$3,210.00</td>
+                            <td id="adj-val-4">$3,210.00</td>
+                            <td>$2,000.00</td>
+                            <td id="adj-profit-4" class="amt-pos">$1,210.00</td>
+                            <td id="adj-reason-4" class="amt-zero">-</td>
+                            <td><span class="badge badge-warning" id="adj-status-4">Pending</span></td>
+                            <td><button class="btn btn-sm" onclick="openAdjust(4,'S004174',3210.00,2000.00)">Edit</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid var(--border)">
+                    <button class="btn" onclick="goStep(3)">← Back</button>
+                    <button class="btn btn-primary" onclick="goStep(5)">Next: Push to Finance →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Step 5: 推送财务 ==================== -->
+        <div id="step5" class="step-page">
+            <div class="instruction">
+                <strong>Step 5: 确认并推送到财务系统</strong>
+                <p>确认所有预估数据无误后，点击"Push All to Finance"一键推送。推送成功后该月份自动锁定，不可再调整。</p>
+            </div>
+
+            <div class="page-header">
+                <span class="page-header-title">确认推送 — 2026-06</span>
+            </div>
+            <div class="page-body">
+                <div class="toolbar">
+                    <span style="font-size:13px;color:var(--gray)">请确认以下数据无误后推送</span>
+                </div>
+
+                <div id="pushConfirm">
+                    <div class="alert alert-warning" style="margin:16px 20px">
+                        <span class="alert-icon">💲</span>
+                        <div>
+                            将为以下合同推送预估收入到财务系统，推送后<strong>不可修改</strong>：
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Contract</th>
+                                <th>Account</th>
+                                <th>Est Revenue (USD)</th>
+                                <th>Est Cost (USD)</th>
+                                <th>Profit (USD)</th>
+                                <th>Adjusted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>S003117</td>
+                                <td>624</td>
+                                <td class="amt-pos" id="push-val-1">$12,345.67</td>
+                                <td>$8,234.56</td>
+                                <td class="amt-pos" id="push-profit-1">$4,111.11</td>
+                                <td id="push-adj-1"><span class="badge badge-gray">No</span></td>
+                            </tr>
+                            <tr>
+                                <td>S002815</td>
+                                <td>624(new)</td>
+                                <td class="amt-pos" id="push-val-2">$5,678.90</td>
+                                <td>$3,456.78</td>
+                                <td class="amt-pos" id="push-profit-2">$2,222.12</td>
+                                <td id="push-adj-2"><span class="badge badge-gray">No</span></td>
+                            </tr>
+                            <tr>
+                                <td>S001739</td>
+                                <td>54</td>
+                                <td class="amt-pos" id="push-val-3">$3,122.00</td>
+                                <td>$2,100.00</td>
+                                <td class="amt-pos" id="push-profit-3">$1,022.00</td>
+                                <td id="push-adj-3"><span class="badge badge-gray">No</span></td>
+                            </tr>
+                            <tr>
+                                <td>S004174</td>
+                                <td>11</td>
+                                <td class="amt-pos" id="push-val-4">$3,210.00</td>
+                                <td>$2,000.00</td>
+                                <td class="amt-pos" id="push-profit-4">$1,210.00</td>
+                                <td id="push-adj-4"><span class="badge badge-gray">No</span></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="font-weight:700;background:#f1f3f4">
+                                <td colspan="2">Total</td>
+                                <td class="amt-pos" id="push-total-rev">$24,356.57</td>
+                                <td>$15,791.34</td>
+                                <td class="amt-pos" id="push-total-profit">$8,565.23</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div style="padding:16px 20px;text-align:center">
+                        <button class="btn btn-success" style="font-size:15px;padding:12px 32px" onclick="pushToFinance()">
+                            Push All to Finance
+                        </button>
+                    </div>
+                </div>
+
+                <div id="pushDone" style="display:none;padding:40px;text-align:center">
+                    <p style="font-size:48px;margin-bottom:16px">✅</p>
+                    <p style="font-size:20px;font-weight:700;color:var(--success);margin-bottom:8px">Push Complete!</p>
+                    <p style="font-size:14px;color:var(--gray);margin-bottom:24px">2026-06 Accrual has been pushed to Finance System. Month locked.</p>
+                    <button class="btn" onclick="resetAll()">Reset Flow</button>
+                </div>
+
+                <div style="padding:12px 20px;border-top:1px solid var(--border)">
+                    <button class="btn" onclick="goStep(4)">← Back to Adjust</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adjust Modal -->
+    <div class="modal-overlay" id="adjustModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Estimate — <span id="modal-contract"></span></h3>
+                <span class="modal-close" onclick="closeAdjust()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <span class="alert-icon">💲</span>
+                    <div>Will push estimate revenue <strong id="modal-system-val" class="amt-pos"></strong> to Finance</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">System Estimate Revenue</label>
+                    <input class="form-input" id="modal-sys-input" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Adjusted Revenue (USD)</label>
+                    <input class="form-input" id="modal-adj-input" placeholder="Leave empty to use system value">
+                    <div class="form-hint">Leave empty if no adjustment needed</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Adjust Reason</label>
+                    <input class="form-input" id="modal-reason-input" placeholder="Reason for adjustment (required if adjusting)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeAdjust()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveAdjust()">Save Adjustment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentStep = 1;
+        let adjustedValues = {};
+        let adjustedReasons = {};
+        const contracts = [
+            { id: 'S003117', account: '624', business: 'miads', currency: 'USD', revenue: 12345.67, cost: 8234.56 },
+            { id: 'S002815', account: '624(new)', business: 'miads', currency: 'USD', revenue: 5678.90, cost: 3456.78 },
+            { id: 'S001739', account: '54', business: 'miads', currency: 'USD', revenue: 3122.00, cost: 2100.00 },
+            { id: 'S004174', account: '11', business: 'miads', currency: 'CNY', revenue: 3210.00, cost: 2000.00 }
+        ];
+        const matchData = [
+            { media: 'Mintegral', country: 'IN', account: '624', spend: 5000, act: 120, date: '2026-06-01', contract: 'S003117', rate: '1.0', status: 'ok' },
+            { media: 'Unity', country: 'BR', account: '624', spend: 3200, act: 85, date: '2026-06-01', contract: 'S003117', rate: '1.0', status: 'ok' },
+            { media: 'Applovin', country: 'ID', account: '624(new)', spend: 2800, act: 95, date: '2026-06-01', contract: 'S002815', rate: '1.0', status: 'ok' },
+            { media: 'Facebook', country: 'US', account: '54', spend: 4100, act: 200, date: '2026-06-01', contract: 'S001739', rate: '1.0', status: 'ok' },
+            { media: 'Google', country: 'JP', account: '11', spend: 18000, act: 350, date: '2026-06-01', contract: 'S004174', rate: '7.2', status: 'ok' },
+            { media: 'TikTok', country: 'TH', account: '9999', spend: 1500, act: 40, date: '2026-06-01', contract: '-', rate: '-', status: 'error' },
+        ];
+
+        // Navigation
+        function goStep(n) {
+            if (n > currentStep + 1) return; // can't skip ahead
+            document.querySelectorAll('.step-page').forEach(p => p.classList.remove('active'));
+            document.getElementById('step' + n).classList.add('active');
+            document.querySelectorAll('.step-item').forEach((s, i) => {
+                s.classList.remove('active', 'done', 'pending');
+                if (i + 1 < n) s.classList.add('done');
+                else if (i + 1 === n) s.classList.add('active');
+                else s.classList.add('pending');
+            });
+            currentStep = n;
+            updatePushPage();
+        }
+
+        function resetAll() {
+            adjustedValues = {};
+            adjustedReasons = {};
+            goStep(1);
+            document.getElementById('contractTable').innerHTML = '<div style="padding:60px;text-align:center;color:var(--gray)"><p style="font-size:16px;margin-bottom:8px">No contract data</p><p style="font-size:13px">Click "Sync from CRM" above</p></div>';
+            document.getElementById('btn-step1-next').disabled = true;
+            document.getElementById('matchResult').style.display = 'none';
+            document.getElementById('uploadArea').style.display = '';
+            document.getElementById('btn-step2-next').disabled = true;
+            document.getElementById('pushConfirm').style.display = '';
+            document.getElementById('pushDone').style.display = 'none';
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('adj-val-' + i).textContent = '$' + contracts[i-1].revenue.toFixed(2);
+                document.getElementById('adj-profit-' + i).textContent = '$' + (contracts[i-1].revenue - contracts[i-1].cost).toFixed(2);
+                document.getElementById('adj-reason-' + i).textContent = '-';
+                document.getElementById('adj-reason-' + i).className = 'amt-zero';
+                document.getElementById('adj-status-' + i).className = 'badge badge-warning';
+                document.getElementById('adj-status-' + i).textContent = 'Pending';
+            }
+        }
+
+        // Step 1: Sync
+        function syncContracts() {
+            const el = document.getElementById('syncStatus');
+            el.textContent = 'Syncing...';
+            el.style.color = 'var(--orange)';
+            document.getElementById('btn-step1-next').disabled = true;
+            setTimeout(() => {
+                el.textContent = 'Synced 4 contracts';
+                el.style.color = 'var(--success)';
+                let html = '<table class="data-table"><thead><tr><th>Contract</th><th>Account</th><th>Business</th><th>Currency</th><th>Settlement</th><th>Accrual</th><th>Sync Time</th><th>Status</th></tr></thead><tbody>';
+                contracts.forEach(c => {
+                    html += '<tr><td>' + c.id + '</td><td>' + c.account + '</td><td>' + c.business + '</td><td>' + c.currency + '</td><td>Monthly</td><td>Yes</td><td>2026-06-05 10:00</td><td><span class="badge badge-success">Matched</span></td></tr>';
+                });
+                html += '</tbody></table>';
+                document.getElementById('contractTable').innerHTML = html;
+                document.getElementById('btn-step1-next').disabled = false;
+                showToast('CRM sync complete: 4 contracts', 'success');
+            }, 1200);
+        }
+
+        // Step 2: Upload
+        function uploadData() {
+            const el = document.getElementById('uploadStatus');
+            el.textContent = 'Processing...';
+            el.style.color = 'var(--orange)';
+            document.getElementById('btn-step2-next').disabled = true;
+            setTimeout(() => {
+                el.textContent = 'Done';
+                el.style.color = 'var(--success)';
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('matchResult').style.display = '';
+                const total = matchData.length;
+                const matched = matchData.filter(d => d.status === 'ok').length;
+                const unmatched = total - matched;
+                document.getElementById('totalRows').textContent = total;
+                document.getElementById('matchedRows').textContent = matched;
+                document.getElementById('unmatchedRows').textContent = unmatched;
+                document.getElementById('sum-total').textContent = total;
+                document.getElementById('sum-matched').textContent = matched;
+                document.getElementById('sum-unmatched').textContent = unmatched;
+                document.getElementById('sum-converted').textContent = matched;
+                let tbody = '';
+                matchData.forEach(d => {
+                    const cls = d.status === 'ok' ? '' : ' style="background:#fff5f5"';
+                    tbody += '<tr' + cls + '><td>' + d.media + '</td><td>' + d.country + '</td><td>' + d.account + '</td><td>$' + d.spend.toLocaleString() + '</td><td>' + d.act + '</td><td>' + d.date + '</td><td>' + d.contract + '</td><td>' + d.rate + '</td><td>' + (d.status === 'ok' ? '<span class="badge badge-success">Matched</span>' : '<span class="badge badge-danger">Unmatched</span>') + '</td></tr>';
+                });
+                document.getElementById('matchTableBody').innerHTML = tbody;
+                document.getElementById('btn-step2-next').disabled = false;
+                showToast('Data matched: ' + matched + '/' + total, 'success');
+            }, 1500);
+        }
+
+        // Step 4: Adjust
+        let currentAdjustRow = 0;
+        function openAdjust(row, contract, sysRev, cost) {
+            currentAdjustRow = row;
+            document.getElementById('modal-contract').textContent = contract;
+            document.getElementById('modal-system-val').textContent = '$' + sysRev.toFixed(2);
+            document.getElementById('modal-sys-input').value = '$' + sysRev.toFixed(2);
+            document.getElementById('modal-adj-input').value = adjustedValues[row] || '';
+            document.getElementById('modal-reason-input').value = adjustedReasons[row] || '';
+            document.getElementById('adjustModal').classList.add('show');
+        }
+        function closeAdjust() { document.getElementById('adjustModal').classList.remove('show'); }
+        function saveAdjust() {
+            const adj = document.getElementById('modal-adj-input').value.trim();
+            const reason = document.getElementById('modal-reason-input').value.trim();
+            const row = currentAdjustRow;
+            const sysRev = contracts[row-1].revenue;
+            const cost = contracts[row-1].cost;
+            if (adj && !reason) { showToast('Please fill in reason', 'error'); return; }
+            const finalRev = adj ? parseFloat(adj) : sysRev;
+            adjustedValues[row] = adj;
+            adjustedReasons[row] = reason;
+            document.getElementById('adj-val-' + row).textContent = '$' + finalRev.toFixed(2);
+            document.getElementById('adj-profit-' + row).textContent = '$' + (finalRev - cost).toFixed(2);
+            document.getElementById('adj-profit-' + row).className = finalRev - cost >= 0 ? 'amt-pos' : 'amt-neg';
+            if (adj) {
+                document.getElementById('adj-reason-' + row).textContent = reason;
+                document.getElementById('adj-reason-' + row).className = '';
+                document.getElementById('adj-status-' + row).className = 'badge badge-info';
+                document.getElementById('adj-status-' + row).textContent = 'Adjusted';
+                document.getElementById('adj-row-' + row).classList.add('highlight-row');
+            } else {
+                document.getElementById('adj-reason-' + row).textContent = '-';
+                document.getElementById('adj-reason-' + row).className = 'amt-zero';
+                document.getElementById('adj-status-' + row).className = 'badge badge-warning';
+                document.getElementById('adj-status-' + row).textContent = 'Pending';
+            }
+            closeAdjust();
+            showToast('Saved for ' + contracts[row-1].id, 'success');
+        }
+
+        // Step 5: Push
+        function updatePushPage() {
+            let totalRev = 0;
+            for (let i = 1; i <= 4; i++) {
+                const adj = adjustedValues[i];
+                const sysRev = contracts[i-1].revenue;
+                const finalRev = adj ? parseFloat(adj) : sysRev;
+                totalRev += finalRev;
+                document.getElementById('push-val-' + i).textContent = '$' + finalRev.toFixed(2);
+                document.getElementById('push-profit-' + i).textContent = '$' + (finalRev - contracts[i-1].cost).toFixed(2);
+                if (adj) {
+                    document.getElementById('push-adj-' + i).innerHTML = '<span class="badge badge-info">Yes</span>';
+                } else {
+                    document.getElementById('push-adj-' + i).innerHTML = '<span class="badge badge-gray">No</span>';
+                }
+            }
+            document.getElementById('push-total-rev').textContent = '$' + totalRev.toFixed(2);
+        }
+        function pushToFinance() {
+            document.getElementById('pushConfirm').style.display = 'none';
+            document.getElementById('pushDone').style.display = '';
+            showToast('Push complete! Month locked.', 'success');
+        }
+
+        // Toast
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast toast-' + type + ' show';
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
