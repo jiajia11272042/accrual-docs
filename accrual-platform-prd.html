@@ -323,6 +323,54 @@
         /* 两列布局 */
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+        /* 页面区块 */
+        .page-section {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .page-section-header {
+            background: linear-gradient(135deg, #e8f0fe, #f8fbff);
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-section-body { padding: 20px; }
+        .page-section-body h4 { font-size: 15px; margin: 14px 0 8px; color: #333; }
+
+        /* 三列布局 */
+        .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+
+        /* 代码块 */
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        /* 字段列表 */
+        .field-list { list-style: none; padding: 0; }
+        .field-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .field-list li:last-child { border-bottom: none; }
+        .field-name { font-weight: 600; color: var(--primary); min-width: 140px; }
+        .field-type { color: var(--gray); font-size: 12px; }
+        .field-desc { color: #333; }
     </style>
 </head>
 <body>
@@ -331,19 +379,27 @@
         <div class="nav">
             <span class="nav-title">计提平台 PRD</span>
             <a class="tab-link active" onclick="switchTab('overview')">概述</a>
+            <a class="tab-link" onclick="switchTab('types')">计提类型与业务线</a>
             <a class="tab-link" onclick="switchTab('data')">数据组需求</a>
             <a class="tab-link" onclick="switchTab('platform')">平台组需求</a>
-            <a class="tab-link" onclick="switchTab('flow')">核心流程</a>
+            <a class="tab-link" onclick="switchTab('flow')">核心流程图</a>
             <a class="tab-link" onclick="switchTab('proto')">原型图</a>
         </div>
 
-        <!-- ========== 概述 ========== -->
+        <!-- ========== Tab 1: 概述 ========== -->
         <div id="overview" class="tab-content active">
             <div class="card">
                 <h2>1. 项目概述</h2>
 
                 <h3>1.1 背景</h3>
                 <p>现有计提平台存在计算逻辑与配置维护耦合、数据粒度粗、无法按业务线灵活配置公式等问题。本次新建独立计提平台，将<strong>数据处理</strong>与<strong>计提计算</strong>解耦，由数据组负责原始数据输出，平台组负责合同匹配、汇率转换、预估计算、手动调整、同步财务。</p>
+                <p style="margin-top:10px">新平台核心改进点：</p>
+                <ul style="margin:8px 0 8px 24px">
+                    <li>支持<strong>5种计提类型</strong>（收入/成本/返点/返货/赔付）的统一管理</li>
+                    <li>支持<strong>4条业务线</strong>（miads含offline/miads不含offline/程序化/云端预装）的灵活选择与组合</li>
+                    <li>引入<strong>计提人</strong>（Accrual Person）维度，按人员隔离计提范围</li>
+                    <li>全流程可追溯：从选择条件到数据拉取、计算、调整、推送，每步均有记录</li>
+                </ul>
 
                 <h3>1.2 核心设计原则</h3>
                 <table>
@@ -352,6 +408,8 @@
                     <tr><td><strong>公式可配置</strong></td><td>每个业务线可独立配置预估计算公式，无需改代码</td></tr>
                     <tr><td><strong>人工可干预</strong></td><td>预估结果支持手动调整，调整后可一键推送财务</td></tr>
                     <tr><td><strong>合同信息复用CRM</strong></td><td>合同ID/账户/币种等信息从CRM读取，不重复维护</td></tr>
+                    <tr><td><strong>按计提人隔离</strong></td><td>启动计提时仅拉取该计提人负责的合同，避免跨人员干扰</td></tr>
+                    <tr><td><strong>全流程可追溯</strong></td><td>每一步操作（选择、匹配、计算、调整、推送）均记录日志，支持审计</td></tr>
                 </table>
 
                 <h3>1.3 系统边界</h3>
@@ -367,26 +425,32 @@ graph LR
     subgraph CRM ["CRM System (Existing)"]
         E["Contract Mgmt: ContractID / Account / Currency / Settlement"]
         F["Exchange Rate Config"]
+        G["Accrual Person Config: Person -> Contracts"]
     end
 
     subgraph Platform ["Accrual Platform (New)"]
-        G["Contract Match"]
-        H["Exchange Rate Convert"]
-        I["Estimate Calc (Business Formula)"]
-        J["Estimate Confirm (Manual Adjust)"]
-        K["Push to Finance"]
+        H["P1: Accrual Selection Page"]
+        I["P2: Contract Match and Data Pull"]
+        J["P3: Formula and Rate Config"]
+        K["P4: Estimate Results"]
+        L["P5: Manual Adjust"]
+        M["P6: Push to Finance"]
+        N["P7: Push History"]
     end
 
     A --> C
     B --> C
     C --> D
-    D -->|Base Data| G
-    E -->|Contract Info| G
-    F -->|Rate| H
-    G --> H
+    D -->|Base Data| H
     H --> I
+    E -->|Contract Info| I
+    G -->|Accrual Person Filter| I
+    F -->|Rate| J
     I --> J
     J --> K
+    K --> L
+    L --> M
+    M --> N
 
     style DataTeam fill:#fef7e0,stroke:#f9ab00
     style CRM fill:#f3e8fd,stroke:#9334e6
@@ -394,46 +458,214 @@ graph LR
                 </div>
 
                 <div class="tip tip-info">
-                    <span class="tip-icon">💡</span>
-                    <div><strong>关键区分：</strong>数据组产出<strong>计提基础数据</strong>（国家×媒体×账户维度），平台组在此基础上做合同匹配、汇率转换、预估计算，两组职责完全独立。</div>
+                    <span class="tip-icon">i</span>
+                    <div><strong>关键区分：</strong>数据组产出<strong>计提基础数据</strong>（国家 x 媒体 x 账户维度），平台组在此基础上做合同匹配、汇率转换、预估计算。两组职责完全独立，平台组通过计提人筛选范围后启动计算。</div>
                 </div>
             </div>
         </div>
 
-        <!-- ========== 数据组需求 ========== -->
+        <!-- ========== Tab 2: 计提类型与业务线 ========== -->
+        <div id="types" class="tab-content">
+            <div class="card">
+                <h2>2. 计提类型与业务线</h2>
+                <p>新平台支持 5 种计提类型和 4 条业务线。不同组合决定了数据拉取方式、计算公式和推送财务的数据结构。</p>
+
+                <h3>2.1 计提类型定义</h3>
+                <table>
+                    <tr>
+                        <th>计提类型</th>
+                        <th>英文名</th>
+                        <th>说明</th>
+                        <th>数据来源</th>
+                        <th>计算方法</th>
+                    </tr>
+                    <tr>
+                        <td><strong>收入计提</strong></td>
+                        <td>Revenue Accrual</td>
+                        <td>按合同约定的分成比例，预估当月应确认的广告收入</td>
+                        <td>Data Team base data (revenue field)</td>
+                        <td><code>Est Revenue = Revenue x (1 - Rebate Ratio) x Exchange Rate</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>成本计提</strong></td>
+                        <td>Cost Accrual</td>
+                        <td>按消耗数据预估当月应确认的广告成本</td>
+                        <td>Data Team base data (dsp_fee field)</td>
+                        <td><code>Est Cost = Spend x Cost Ratio x Exchange Rate</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>返点计提</strong></td>
+                        <td>Rebate Accrual</td>
+                        <td>按合同约定的返点比例，预估当月应返还的返点金额</td>
+                        <td>Data Team base data (rebate_ratio field)</td>
+                        <td><code>Est Rebate = Revenue x Rebate Ratio x Exchange Rate</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>返货计提</strong></td>
+                        <td>Return Accrual</td>
+                        <td>预估当月因退货/退款产生的应冲减金额</td>
+                        <td>Data Team return data</td>
+                        <td><code>Est Return = Return Amount x Exchange Rate</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>赔付计提</strong></td>
+                        <td>Claim Accrual</td>
+                        <td>预估当月因广告赔付/争议产生的应确认金额</td>
+                        <td>Data Team claim data</td>
+                        <td><code>Est Claim = Claim Amount x Exchange Rate</code></td>
+                    </tr>
+                </table>
+
+                <h3>2.2 业务线定义</h3>
+                <table>
+                    <tr>
+                        <th>业务线</th>
+                        <th>英文名</th>
+                        <th>说明</th>
+                        <th>包含数据范围</th>
+                        <th>典型合同特征</th>
+                    </tr>
+                    <tr>
+                        <td><strong>miads（含offline）</strong></td>
+                        <td>MIAds with Offline</td>
+                        <td>小米广告平台全部广告形式，包含线上和线下（offline）广告位</td>
+                        <td>线上消耗 + 线下消耗（offline DSP fee）</td>
+                        <td>合同包含 offline ad slot 配置</td>
+                    </tr>
+                    <tr>
+                        <td><strong>miads（不含offline）</strong></td>
+                        <td>MIAds Online Only</td>
+                        <td>小米广告平台仅线上广告位，排除线下数据</td>
+                        <td>仅线上消耗</td>
+                        <td>纯线上广告合同</td>
+                    </tr>
+                    <tr>
+                        <td><strong>程序化</strong></td>
+                        <td>Programmatic</td>
+                        <td>程序化广告投放，通过 RTB/ADX 等方式自动竞价</td>
+                        <td>程序化广告消耗数据</td>
+                        <td>RTB/ADX 类合同</td>
+                    </tr>
+                    <tr>
+                        <td><strong>云端预装</strong></td>
+                        <td>Cloud Preinstall</td>
+                        <td>云端预装应用的分发数据，按预装量计提</td>
+                        <td>预装激活数据</td>
+                        <td>预装分发类合同</td>
+                    </tr>
+                </table>
+
+                <h3>2.3 交叉选择矩阵</h3>
+                <p>下表定义了哪些「计提类型 x 业务线」组合是有效可用的（<span style="color:var(--success)">&#10003;</span> = 可用，<span style="color:var(--gray)">-</span> = 不适用）：</p>
+                <table>
+                    <tr>
+                        <th>计提类型 \ 业务线</th>
+                        <th>miads（含offline）</th>
+                        <th>miads（不含offline）</th>
+                        <th>程序化</th>
+                        <th>云端预装</th>
+                    </tr>
+                    <tr>
+                        <td><strong>收入计提 Revenue</strong></td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>成本计提 Cost</strong></td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--gray)">-</td>
+                    </tr>
+                    <tr>
+                        <td><strong>返点计提 Rebate</strong></td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--gray)">-</td>
+                        <td style="color:var(--gray)">-</td>
+                    </tr>
+                    <tr>
+                        <td><strong>返货计提 Return</strong></td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--gray)">-</td>
+                        <td style="color:var(--gray)">-</td>
+                    </tr>
+                    <tr>
+                        <td><strong>赔付计提 Claim</strong></td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--success)">&#10003;</td>
+                        <td style="color:var(--gray)">-</td>
+                        <td style="color:var(--gray)">-</td>
+                    </tr>
+                </table>
+
+                <div class="tip tip-warning">
+                    <span class="tip-icon">!</span>
+                    <div><strong>交叉选择规则：</strong>用户在 P1 页面同时选择计提类型和业务线后，系统自动过滤不合法的组合。例如选择「返点计提 + 程序化」会提示该组合不支持。选择结果直接影响后续数据拉取范围和可用公式。</div>
+                </div>
+
+                <h3>2.4 选择对下游的影响</h3>
+                <div class="req-card">
+                    <h4>数据拉取影响</h4>
+                    <table>
+                        <tr><th>维度</th><th>影响说明</th></tr>
+                        <tr><td><strong>数据组 base data 过滤</strong></td><td>选择「miads（不含offline）」时，过滤掉 offline ad slot 数据行；选择「miads（含offline）」时包含全部</td></tr>
+                        <tr><td><strong>合同匹配范围</strong></td><td>按业务线过滤 CRM 合同表中的合同，仅匹配对应业务线的合同</td></tr>
+                        <tr><td><strong>公式匹配</strong></td><td>根据「计提类型 + 业务线」组合匹配对应的计算公式（见 Tab 3 公式配置）</td></tr>
+                        <tr><td><strong>汇率匹配</strong></td><td>按合同币种匹配汇率表，与计提类型无关</td></tr>
+                        <tr><td><strong>推送财务字段</strong></td><td>不同计提类型推送的财务字段结构不同（收入/成本/返点各有独立字段）</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== Tab 3: 数据组需求 ========== -->
         <div id="data" class="tab-content">
             <div class="card">
-                <h2>2. 数据组需求</h2>
-                <p><span class="tag tag-data">数据组</span> 负责原始数据接入、清洗、配置替换，最终输出计提基础数据。</p>
+                <h2>3. 数据组需求</h2>
+                <p><span class="tag tag-data">Data Team</span> 负责原始数据接入、清洗、配置替换，最终输出计提基础数据。</p>
 
-                <h3>2.1 数据输入</h3>
+                <h3>3.1 数据输入</h3>
                 <table>
                     <tr><th>数据源</th><th>内容</th><th>更新频率</th><th>负责人</th></tr>
                     <tr><td>自有系统</td><td>miads 消耗/激活/点击</td><td>每日</td><td>数据团队</td></tr>
                     <tr><td>第三方 API</td><td>offline 消耗数据</td><td>每日</td><td>数据团队</td></tr>
+                    <tr><td>程序化平台</td><td>RTB/ADX 程序化消耗数据</td><td>每日</td><td>数据团队</td></tr>
+                    <tr><td>预装平台</td><td>云端预装激活数据</td><td>每日</td><td>数据团队</td></tr>
                     <tr><td>CRM 合同系统</td><td>合同ID/账户/币种/结算方式</td><td>手动同步</td><td>运营</td></tr>
                     <tr><td>配置文件</td><td>媒体替换规则/国家替换规则/返点系数</td><td>人工上传</td><td>运营/ADPM</td></tr>
                 </table>
 
-                <h3>2.2 数据预处理</h3>
+                <h3>3.2 数据预处理流程</h3>
                 <div class="mermaid">
 graph TD
     A["Raw Data: Media / Country / Account / Spend / Activations"] --> B["Media Replace: Map to Standard Media Name"]
     B --> C["Ad Slot Replace: TagID to Standard Slot"]
     C --> D["Country Replace: Raw Code to Standard Country"]
-    D --> E["MSA Revenue Split: Split by Ratio"]
-    E --> F["Rebate Calc: Apply Rebate Coefficient"]
-    F --> G["Output: Country x Media x Account x Day"]
+    D --> E["Business Line Tag: Tag as miads / programmatic / preinstall"]
+    E --> F["MSA Revenue Split: Split by Ratio"]
+    F --> G["Rebate Calc: Apply Rebate Coefficient"]
+    G --> H["Output: Country x Media x Account x Day x BusinessLine"]
 
     style A fill:#fef7e0,stroke:#f9ab00
-    style G fill:#e6f4ea,stroke:#34a853
+    style E fill:#f3e8fd,stroke:#9334e6
+    style H fill:#e6f4ea,stroke:#34a853
                 </div>
 
-                <h3>2.3 输出数据格式</h3>
+                <div class="tip tip-info">
+                    <span class="tip-icon">i</span>
+                    <div><strong>新增 Business Line Tag 步骤：</strong>数据组在预处理阶段需为每条数据打上业务线标签（miads_online / miads_offline / programmatic / cloud_preinstall），平台组在 P1 页面选择业务线后直接按标签过滤。</div>
+                </div>
+
+                <h3>3.3 输出数据格式</h3>
                 <div class="req-card req-card-data">
                     <h4>输出字段</h4>
                     <table>
                         <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+                        <tr><td>business_line</td><td>String</td><td>业务线标签：miads_online / miads_offline / programmatic / cloud_preinstall</td></tr>
                         <tr><td>media_type</td><td>String</td><td>标准媒体名（替换后）</td></tr>
                         <tr><td>region</td><td>String</td><td>标准国家码</td></tr>
                         <tr><td>account_id</td><td>String</td><td>账户ID</td></tr>
@@ -442,160 +674,816 @@ graph TD
                         <tr><td>date</td><td>String</td><td>日期 YYYY-MM-DD</td></tr>
                         <tr><td>revenue</td><td>Long</td><td>收入金额（微美元，分成后）</td></tr>
                         <tr><td>rebate_ratio</td><td>Decimal</td><td>返点系数</td></tr>
+                        <tr><td>return_amount</td><td>Long</td><td>返货金额（微美元，仅 Return 类型有值）</td></tr>
+                        <tr><td>claim_amount</td><td>Long</td><td>赔付金额（微美元，仅 Claim 类型有值）</td></tr>
                     </table>
                 </div>
 
                 <div class="tip tip-warning">
-                    <span class="tip-icon">⚠️</span>
-                    <div><strong>注意事项：</strong>数据组<strong>不做任何计提计算</strong>，只做数据清洗和配置替换。预估收入计算、合同匹配、汇率转换全部由平台组完成。</div>
+                    <span class="tip-icon">!</span>
+                    <div><strong>注意事项：</strong>数据组<strong>不做任何计提计算</strong>，只做数据清洗和配置替换。预估收入计算、合同匹配、汇率转换全部由平台组完成。新增的 business_line 字段是平台组按业务线过滤的关键依据。</div>
                 </div>
             </div>
         </div>
 
-        <!-- ========== 平台组需求 ========== -->
+        <!-- ========== Tab 4: 平台组需求 ========== -->
         <div id="platform" class="tab-content">
             <div class="card">
-                <h2>3. 平台组需求</h2>
-                <p><span class="tag tag-platform">平台组</span> 承接数据组输出的基础数据，完成合同匹配、汇率转换、预估计算、手动调整、推送财务。</p>
+                <h2>4. 平台组需求（按页面详细说明）</h2>
+                <p><span class="tag tag-platform">Platform Team</span> 承接数据组输出的基础数据，按以下 7 个页面组织完整的计提流程。每个页面均包含 UI 组件、数据来源、交互逻辑、校验规则和边界处理。</p>
 
-                <h3>3.1 合同信息匹配</h3>
-                <div class="req-card req-card-platform">
-                    <h4>需求 D1：合同数据同步 <span class="tag tag-priority">P0</span></h4>
-                    <table>
-                        <tr><td><strong>需求</strong></td><td>从 CRM 合同系统读取合同信息（合同ID/账户ID/币种/结算方式/计提标记），同步到计提平台</td></tr>
-                        <tr><td><strong>触发方式</strong></td><td>手动同步（运营点击"同步合同"按钮）+ 定时同步（每日凌晨）</td></tr>
-                        <tr><td><strong>匹配逻辑</strong></td><td>通过 account_id 关联 CRM 合同表，一个 account_id 对应一个合同ID</td></tr>
-                        <tr><td><strong>边界处理</strong></td><td>未匹配到合同的账户 → 标记为"未匹配"，不参与计提计算</td></tr>
-                    </table>
+                <div class="tip tip-info">
+                    <span class="tip-icon">i</span>
+                    <div><strong>页面导航：</strong>平台组需求按 P1 ~ P7 逐步展开，每个页面独立成节，包含 UI 布局、字段说明、交互规则和边界处理。用户完成当前页面操作后进入下一个页面。</div>
                 </div>
 
-                <h3>3.2 汇率转换</h3>
-                <div class="req-card req-card-platform">
-                    <h4>需求 D2：汇率转换 <span class="tag tag-priority">P0</span></h4>
-                    <table>
-                        <tr><td><strong>需求</strong></td><td>将非 USD 币种的金额按配置汇率转换为 USD</td></tr>
-                        <tr><td><strong>汇率来源</strong></td><td>平台内"汇率配置"模块，运营手动维护</td></tr>
-                        <tr><td><strong>转换规则</strong></td><td>按结算币种 × 汇率 = USD金额，汇率保留6位小数</td></tr>
-                        <tr><td><strong>边界处理</strong></td><td>汇率未配置 → 标记为"汇率缺失"，金额不转换，阻塞推送</td></tr>
-                    </table>
+                <!-- P1: 计提选择页 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P1: Accrual Selection Page</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>计提选择页是整个流程的入口。用户在此页面选择计提类型、业务线、计提人等筛选条件，点击「开始计提」后系统根据条件拉取合同和数据。</p>
+
+                        <h4>2. UI 布局</h4>
+                        <p>页面分为两个区域：<strong>筛选区</strong>（上方表单）和<strong>操作区</strong>（下方按钮 + 结果预览）。</p>
+
+                        <div class="prototype">
+                            <div class="prototype-title">P1: Accrual Selection Page</div>
+                            <div class="proto-page">
+                                <div class="proto-header">
+                                    <span>Accrual Selection</span>
+                                    <span style="font-size:12px;opacity:0.8">Accrual Platform v2.0</span>
+                                </div>
+                                <div class="proto-layout">
+                                    <div class="proto-sidebar">
+                                        <div class="proto-sidebar-item active">Accrual Selection</div>
+                                        <div class="proto-sidebar-item">Contract Match</div>
+                                        <div class="proto-sidebar-item">Formula Config</div>
+                                        <div class="proto-sidebar-item">Estimate Results</div>
+                                        <div class="proto-sidebar-item">Manual Adjust</div>
+                                        <div class="proto-sidebar-item">Push to Finance</div>
+                                        <div class="proto-sidebar-item">Push History</div>
+                                    </div>
+                                    <div class="proto-main">
+                                        <div style="padding:20px 24px">
+                                            <div class="proto-form-group">
+                                                <label class="proto-label">Accrual Type (Multi-select)</label>
+                                                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox" checked> Revenue</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Cost</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Rebate</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Return</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Claim</label>
+                                                </div>
+                                            </div>
+                                            <div class="proto-form-group">
+                                                <label class="proto-label">Business Line (Multi-select)</label>
+                                                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox" checked> MIAds with Offline</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> MIAds Online Only</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Programmatic</label>
+                                                    <label style="font-size:13px;display:flex;align-items:center;gap:4px"><input type="checkbox"> Cloud Preinstall</label>
+                                                </div>
+                                            </div>
+                                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                                                <div class="proto-form-group">
+                                                    <label class="proto-label">Accrual Person</label>
+                                                    <select class="proto-input">
+                                                        <option>-- Select --</option>
+                                                        <option>Li Jiawei</option>
+                                                        <option>Zhang San</option>
+                                                        <option>Li Si</option>
+                                                    </select>
+                                                </div>
+                                                <div class="proto-form-group">
+                                                    <label class="proto-label">Date Range</label>
+                                                    <input class="proto-input" type="month" value="2026-06">
+                                                </div>
+                                            </div>
+                                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+                                                <div class="proto-form-group">
+                                                    <label class="proto-label">Contract ID (Optional)</label>
+                                                    <input class="proto-input" placeholder="e.g. S003117">
+                                                </div>
+                                                <div class="proto-form-group">
+                                                    <label class="proto-label">DSP Level 1 (Optional)</label>
+                                                    <select class="proto-input">
+                                                        <option>-- All --</option>
+                                                        <option>Mintegral</option>
+                                                        <option>Unity</option>
+                                                    </select>
+                                                </div>
+                                                <div class="proto-form-group">
+                                                    <label class="proto-label">DSP Level 2 (Optional)</label>
+                                                    <select class="proto-input">
+                                                        <option>-- All --</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div style="margin-top:16px;text-align:right">
+                                                <button class="proto-btn proto-btn-primary" style="padding:10px 32px;font-size:14px">Start Accrual</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>3. 表单字段说明</h4>
+                        <table>
+                            <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                            <tr><td><strong>Accrual Type</strong></td><td>Multi-select Checkbox</td><td>Yes (min 1)</td><td>可多选：Revenue / Cost / Rebate / Return / Claim。选中的类型决定后续公式匹配和推送字段</td></tr>
+                            <tr><td><strong>Business Line</strong></td><td>Multi-select Checkbox</td><td>Yes (min 1)</td><td>可多选：MIAds with Offline / MIAds Online Only / Programmatic / Cloud Preinstall。与 Accrual Type 交叉校验</td></tr>
+                            <tr><td><strong>Accrual Person</strong></td><td>Dropdown</td><td>Yes</td><td>从 CRM 读取计提人列表。选择后仅拉取该计提人负责的合同</td></tr>
+                            <tr><td><strong>Date Range</strong></td><td>Month Picker</td><td>Yes</td><td>选择计提月份（单月）。格式 YYYY-MM</td></tr>
+                            <tr><td><strong>Contract ID</strong></td><td>Text Input</td><td>No</td><td>可选筛选。输入后仅拉取该合同</td></tr>
+                            <tr><td><strong>DSP Level 1</strong></td><td>Dropdown</td><td>No</td><td>可选筛选。DSP 一级分类</td></tr>
+                            <tr><td><strong>DSP Level 2</strong></td><td>Dropdown</td><td>No</td><td>可选筛选。DSP 二级分类，联动 DSP Level 1</td></tr>
+                        </table>
+
+                        <h4>4. 校验规则</h4>
+                        <table>
+                            <tr><th>规则</th><th>触发条件</th><th>提示信息</th></tr>
+                            <tr><td>计提类型必选</td><td>未勾选任何类型</td><td>"Please select at least one Accrual Type"</td></tr>
+                            <tr><td>业务线必选</td><td>未勾选任何业务线</td><td>"Please select at least one Business Line"</td></tr>
+                            <tr><td>计提人必选</td><td>未选择计提人</td><td>"Please select an Accrual Person"</td></tr>
+                            <tr><td>日期必选</td><td>未选择月份</td><td>"Please select a month"</td></tr>
+                            <tr><td>交叉组合校验</td><td>选择的 Accrual Type + Business Line 组合不在有效矩阵中</td><td>"Accrual Type '{type}' is not supported for Business Line '{line}'"</td></tr>
+                            <tr><td>历史月份锁定</td><td>选择的月份已被推送财务锁定</td><td>"Month {YYYY-MM} is locked. Cannot start accrual"</td></tr>
+                        </table>
+
+                        <h4>5. 「Start Accrual」按钮行为</h4>
+                        <div class="req-card">
+                            <h4>点击后执行步骤</h4>
+                            <table>
+                                <tr><th>步骤</th><th>动作</th><th>说明</th></tr>
+                                <tr><td>1</td><td>前端校验</td><td>执行上述所有校验规则，任一失败则阻止提交并高亮错误字段</td></tr>
+                                <tr><td>2</td><td>创建计提任务</td><td>后端生成 Task ID（UUID），状态 = "INIT"</td></tr>
+                                <tr><td>3</td><td>过滤合同</td><td>按 Accrual Person 从 CRM 合同表中筛选该计提人负责的合同；再按 Business Line 过滤对应业务线的合同</td></tr>
+                                <tr><td>4</td><td>拉取 base data</td><td>从 Data Team 输出表中按 Business Line 标签 + Date Range 过滤基础数据</td></tr>
+                                <tr><td>5</td><td>跳转 P2</td><td>进入合同匹配 & 数据拉取页面，展示匹配进度</td></tr>
+                            </table>
+                        </div>
+
+                        <h4>6. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>选定计提人无合同</td><td>提示 "No contracts found for selected Accrual Person"，阻止继续</td></tr>
+                            <tr><td>选定业务线无 base data</td><td>提示 "No base data found for selected Business Line in {month}"，阻止继续</td></tr>
+                            <tr><td>网络异常 / API 超时</td><td>提示 "Service unavailable, please retry"，不创建任务</td></tr>
+                        </table>
+                    </div>
                 </div>
 
-                <h3>3.3 预估计算（核心）</h3>
-                <div class="req-card req-card-platform">
-                    <h4>需求 D3：预估收入/成本计算 <span class="tag tag-priority">P0</span></h4>
-                    <table>
-                        <tr><td><strong>需求</strong></td><td>根据业务线配置的计算公式，自动计算预估收入/成本</td></tr>
-                        <tr><td><strong>公式配置</strong></td><td>每个业务线可独立配置公式，如：<br><code>预估收入 = 收入 × (1 - 返点系数) × 汇率</code><br><code>预估成本 = 消耗 × 成本系数</code></td></tr>
-                        <tr><td><strong>计算粒度</strong></td><td>按合同 × 月份汇总</td></tr>
-                        <tr><td><strong>输出</strong></td><td>预估收入（USD）、预估成本（USD）、预估利润</td></tr>
-                    </table>
+                <!-- P2: 合同匹配 & 数据拉取 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P2: Contract Match & Data Pull</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>系统自动执行合同匹配和数据拉取。用户在此页面查看匹配进度、匹配结果统计、未匹配合同列表，并可手动触发重新匹配。</p>
+
+                        <h4>2. 合同过滤逻辑</h4>
+                        <div class="req-card">
+                            <h4>Filter Chain</h4>
+                            <table>
+                                <tr><th>步骤</th><th>过滤条件</th><th>数据来源</th></tr>
+                                <tr><td>1</td><td>按 Accrual Person 过滤合同</td><td>CRM 合同表 WHERE accrual_person = selected_person</td></tr>
+                                <tr><td>2</td><td>按 Business Line 过滤合同</td><td>CRM 合同表 WHERE business_line IN selected_lines</td></tr>
+                                <tr><td>3</td><td>按 Date Range 过滤合同有效期</td><td>CRM 合同表 WHERE contract_start_date &lt;= month AND contract_end_date >= month</td></tr>
+                                <tr><td>4</td><td>按 Contract ID 精确匹配（可选）</td><td>CRM 合同表 WHERE contract_id = input_id</td></tr>
+                                <tr><td>5</td><td>按 DSP Level 过滤（可选）</td><td>CRM 合同表 WHERE dsp_level1/level2 = selected</td></tr>
+                            </table>
+                        </div>
+
+                        <h4>3. 数据拉取逻辑</h4>
+                        <div class="req-card">
+                            <h4>Data Pull per Contract</h4>
+                            <table>
+                                <tr><th>维度</th><th>说明</th></tr>
+                                <tr><td><strong>数据粒度</strong></td><td>按 Contract x Account x Media x Country x Day 拉取 base data</td></tr>
+                                <tr><td><strong>过滤条件</strong></td><td>business_line IN selected_lines AND date BETWEEN month_start AND month_end</td></tr>
+                                <tr><td><strong>关联方式</strong></td><td>通过 account_id 关联 CRM 合同表，一个 account_id 对应一个 contract_id</td></tr>
+                                <tr><td><strong>数据量控制</strong></td><td>单次拉取限制 10,000 行，超出时分页加载</td></tr>
+                            </table>
+                        </div>
+
+                        <h4>4. 匹配状态展示</h4>
+                        <table>
+                            <tr><th>状态</th><th>颜色</th><th>说明</th></tr>
+                            <tr><td><span class="proto-status proto-status-ok">Matched</span></td><td>Green</td><td>合同已匹配到 base data，可进入计算</td></tr>
+                            <tr><td><span class="proto-status proto-status-pending">Partial</span></td><td>Orange</td><td>合同匹配到部分数据（某些天/媒体缺失）</td></tr>
+                            <tr><td><span class="proto-status proto-status-error">Unmatched</span></td><td>Red</td><td>合同未匹配到任何 base data</td></tr>
+                            <tr><td><span class="proto-status" style="background:#f3e8fd;color:#7627bb">Rate Missing</span></td><td>Purple</td><td>合同已匹配但汇率未配置</td></tr>
+                        </table>
+
+                        <h4>5. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>Unmatched Contract</td><td>标记为 "Unmatched"，不参与预估计算，在结果页显示警告</td></tr>
+                            <tr><td>Missing Exchange Rate</td><td>标记为 "Rate Missing"，阻塞该合同的汇率转换，需用户先配置汇率</td></tr>
+                            <tr><td>Duplicate Account ID</td><td>提示 "Duplicate account_id found under different contracts"，标记异常</td></tr>
+                            <tr><td>Contract Expired</td><td>即使 account_id 匹配，若合同已过期则标记 "Expired" 并跳过</td></tr>
+                            <tr><td>Large Data Set</td><td>超过 50,000 条时提示 "Large data set, estimation may take a few minutes"</td></tr>
+                        </table>
+                    </div>
                 </div>
 
-                <h3>3.4 手动调整</h3>
-                <div class="req-card req-card-platform">
-                    <h4>需求 D4：预估结果手动调整 <span class="tag tag-priority">P0</span></h4>
-                    <table>
-                        <tr><td><strong>需求</strong></td><td>运营可查看预估结果，选择是否手动调整</td></tr>
-                        <tr><td><strong>调整方式</strong></td><td>直接修改预估收入/成本金额，系统自动重算利润</td></tr>
-                        <tr><td><strong>调整记录</strong></td><td>记录调整前后的金额、调整人、调整时间、调整原因</td></tr>
-                        <tr><td><strong>锁定机制</strong></td><td>已推送财务的月份锁定，不可再调整</td></tr>
-                    </table>
+                <!-- P3: 公式确认 & 汇率配置 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P3: Formula Confirmation & Exchange Rate Config</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>用户确认系统自动匹配的计算公式，并检查/补充汇率配置。公式根据「Accrual Type + Business Line」组合自动选定，汇率从平台汇率配置表中读取。</p>
+
+                        <h4>2. 公式展示</h4>
+                        <p>系统根据用户在 P1 选择的 Accrual Type + Business Line 组合，自动匹配对应公式并展示：</p>
+
+                        <table>
+                            <tr><th>Accrual Type</th><th>Business Line</th><th>Formula</th></tr>
+                            <tr><td>Revenue</td><td>MIAds with Offline</td><td><code>Est Revenue = Revenue x (1 - Rebate Ratio) x Exchange Rate</code></td></tr>
+                            <tr><td>Revenue</td><td>MIAds Online Only</td><td><code>Est Revenue = Revenue x (1 - Rebate Ratio) x Exchange Rate</code></td></tr>
+                            <tr><td>Revenue</td><td>Programmatic</td><td><code>Est Revenue = Revenue x (1 - Rebate Ratio) x Exchange Rate</code></td></tr>
+                            <tr><td>Revenue</td><td>Cloud Preinstall</td><td><code>Est Revenue = Active Count x CPA Rate x Exchange Rate</code></td></tr>
+                            <tr><td>Cost</td><td>MIAds with Offline</td><td><code>Est Cost = Spend x Cost Ratio x Exchange Rate</code></td></tr>
+                            <tr><td>Cost</td><td>MIAds Online Only</td><td><code>Est Cost = Spend x Cost Ratio x Exchange Rate</code></td></tr>
+                            <tr><td>Cost</td><td>Programmatic</td><td><code>Est Cost = Spend x Cost Ratio x Exchange Rate</code></td></tr>
+                            <tr><td>Rebate</td><td>MIAds with Offline</td><td><code>Est Rebate = Revenue x Rebate Ratio x Exchange Rate</code></td></tr>
+                            <tr><td>Rebate</td><td>MIAds Online Only</td><td><code>Est Rebate = Revenue x Rebate Ratio x Exchange Rate</code></td></tr>
+                            <tr><td>Return</td><td>MIAds with Offline</td><td><code>Est Return = Return Amount x Exchange Rate</code></td></tr>
+                            <tr><td>Return</td><td>MIAds Online Only</td><td><code>Est Return = Return Amount x Exchange Rate</code></td></tr>
+                            <tr><td>Claim</td><td>MIAds with Offline</td><td><code>Est Claim = Claim Amount x Exchange Rate</code></td></tr>
+                            <tr><td>Claim</td><td>MIAds Online Only</td><td><code>Est Claim = Claim Amount x Exchange Rate</code></td></tr>
+                        </table>
+
+                        <div class="tip tip-info">
+                            <span class="tip-icon">i</span>
+                            <div><strong>公式可编辑：</strong>用户可在页面上临时修改公式参数（如调整 Cost Ratio 或 Rebate Ratio），修改仅对本次计提任务生效，不修改全局配置。</div>
+                        </div>
+
+                        <h4>3. 汇率配置表</h4>
+                        <table>
+                            <tr><th>Currency</th><th>Rate to USD</th><th>Effective Date</th><th>Status</th></tr>
+                            <tr><td>USD</td><td>1.000000</td><td>-</td><td><span class="proto-status proto-status-ok">Default</span></td></tr>
+                            <tr><td>INR</td><td>0.011950</td><td>2026-06-01</td><td><span class="proto-status proto-status-ok">Active</span></td></tr>
+                            <tr><td>BRL</td><td>0.172400</td><td>2026-06-01</td><td><span class="proto-status proto-status-ok">Active</span></td></tr>
+                            <tr><td>IDR</td><td>0.000060</td><td>2026-06-01</td><td><span class="proto-status proto-status-ok">Active</span></td></tr>
+                            <tr><td>CNY</td><td>0.137900</td><td>2026-06-01</td><td><span class="proto-status proto-status-pending">Pending</span></td></tr>
+                        </table>
+
+                        <h4>4. 交互规则</h4>
+                        <table>
+                            <tr><th>交互</th><th>说明</th></tr>
+                            <tr><td>Formula Preview</td><td>每个选中的 Accrual Type + Business Line 组合显示一条公式卡片，用户可展开查看参数</td></tr>
+                            <tr><td>Formula Edit</td><td>点击 "Edit" 弹出参数编辑弹窗，可调整 Cost Ratio / Rebate Ratio / CPA Rate 等参数</td></tr>
+                            <tr><td>Rate Add/Edit</td><td>点击 "Add Rate" 弹出表单，输入币种、汇率、生效日期</td></tr>
+                            <tr><td>Confirm & Proceed</td><td>所有公式确认 + 汇率就绪后，点击 "Calculate" 进入 P4 预估结果页</td></tr>
+                        </table>
+
+                        <h4>5. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>Missing Formula</td><td>系统提示 "No formula configured for {type} + {line}"，阻止继续</td></tr>
+                            <tr><td>Missing Exchange Rate</td><td>高亮缺失币种行，提示 "Exchange rate not configured for {currency}"，阻止 Calculate</td></tr>
+                            <tr><td>Rate Expired</td><td>若汇率生效日期早于计提月份，提示 "Rate may be outdated, please verify"</td></tr>
+                        </table>
+                    </div>
                 </div>
 
-                <h3>3.5 推送财务系统</h3>
-                <div class="req-card req-card-platform">
-                    <h4>需求 D5：一键推送财务 <span class="tag tag-priority">P0</span></h4>
-                    <table>
-                        <tr><td><strong>需求</strong></td><td>确认预估结果后，一键推送到财务系统</td></tr>
-                        <tr><td><strong>推送条件</strong></td><td>合同已匹配 + 汇率已配置 + 预估金额已确认</td></tr>
-                        <tr><td><strong>推送内容</strong></td><td>合同ID、计提月份、预估收入、预估成本、币种、结算方式</td></tr>
-                        <tr><td><strong>推送后状态</strong></td><td>该月份标记为"已推送"，不可再调整</td></tr>
-                        <tr><td><strong>失败处理</strong></td><td>推送失败 → 标记为"推送失败"，支持重试</td></tr>
-                    </table>
+                <!-- P4: 预估结果页 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P4: Estimate Results</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>展示预估计算结果。按合同 x 月份维度汇总，显示预估收入/成本/利润等核心指标。用户可查看汇总数据，也可点击进入明细。</p>
+
+                        <h4>2. 结果表格布局</h4>
+                        <div class="prototype">
+                            <div class="prototype-title">P4: Estimate Results</div>
+                            <div class="proto-page">
+                                <div class="proto-header">
+                                    <span>Estimate Results - 2026-06</span>
+                                    <span style="font-size:12px;opacity:0.8">Accrual Person: Li Jiawei</span>
+                                </div>
+                                <div class="proto-toolbar">
+                                    <select class="proto-input" style="width:140px">
+                                        <option>All Status</option>
+                                        <option>Matched</option>
+                                        <option>Partial</option>
+                                        <option>Unmatched</option>
+                                    </select>
+                                    <button class="proto-btn">Export Excel</button>
+                                    <button class="proto-btn proto-btn-primary">Proceed to Manual Adjust</button>
+                                </div>
+                                <table class="proto-table">
+                                    <thead>
+                                        <tr>
+                                            <th><input type="checkbox"></th>
+                                            <th>Contract ID</th>
+                                            <th>Account ID</th>
+                                            <th>Business Line</th>
+                                            <th>Accrual Type</th>
+                                            <th>Currency</th>
+                                            <th>Est Amount (USD)</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="checkbox" checked></td>
+                                            <td>S003117</td>
+                                            <td>624</td>
+                                            <td>MIAds with Offline</td>
+                                            <td>Revenue</td>
+                                            <td>USD</td>
+                                            <td class="amount-positive">$12,345.67</td>
+                                            <td><span class="proto-status proto-status-ok">Matched</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">View Detail</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox" checked></td>
+                                            <td>S003117</td>
+                                            <td>624</td>
+                                            <td>MIAds with Offline</td>
+                                            <td>Cost</td>
+                                            <td>USD</td>
+                                            <td>$8,234.56</td>
+                                            <td><span class="proto-status proto-status-ok">Matched</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">View Detail</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox" checked></td>
+                                            <td>S002815</td>
+                                            <td>624(new)</td>
+                                            <td>MIAds Online Only</td>
+                                            <td>Revenue</td>
+                                            <td>USD</td>
+                                            <td class="amount-positive">$5,678.90</td>
+                                            <td><span class="proto-status proto-status-pending">Partial</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">View Detail</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox"></td>
+                                            <td>S001739</td>
+                                            <td>54</td>
+                                            <td>Programmatic</td>
+                                            <td>Revenue</td>
+                                            <td>INR</td>
+                                            <td class="amount-positive">$3,210.00</td>
+                                            <td><span class="proto-status proto-status-ok">Matched</span></td>
+                                            <td><a href="#" style="color:var(--primary);font-size:12px">View Detail</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox"></td>
+                                            <td>Unmatched</td>
+                                            <td>9999</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td class="amount-zero">-</td>
+                                            <td><span class="proto-status proto-status-error">Unmatched</span></td>
+                                            <td><span style="color:var(--gray);font-size:12px">N/A</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+                                    <span style="font-size:13px;color:var(--gray)">Total: 4 contracts | Est Revenue: $21,234.57 | Est Cost: $8,234.56</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>3. 表格字段说明</h4>
+                        <table>
+                            <tr><th>字段</th><th>说明</th></tr>
+                            <tr><td>Contract ID</td><td>CRM 合同编号。未匹配的显示 "Unmatched"</td></tr>
+                            <tr><td>Account ID</td><td>广告账户 ID</td></tr>
+                            <tr><td>Business Line</td><td>业务线名称</td></tr>
+                            <tr><td>Accrual Type</td><td>计提类型（Revenue / Cost / Rebate / Return / Claim）</td></tr>
+                            <tr><td>Currency</td><td>合同币种</td></tr>
+                            <tr><td>Est Amount (USD)</td><td>预估金额（已转 USD）。负数显示红色</td></tr>
+                            <tr><td>Status</td><td>Matched / Partial / Unmatched / Rate Missing</td></tr>
+                        </table>
+
+                        <h4>4. 汇总统计区</h4>
+                        <p>页面底部显示汇总统计：</p>
+                        <ul style="margin:8px 0 8px 24px">
+                            <li>匹配合同总数 / 未匹配数</li>
+                            <li>各 Accrual Type 的预估金额汇总</li>
+                            <li>预估总收入 / 总成本 / 总利润</li>
+                        </ul>
+
+                        <h4>5. View Detail 展开</h4>
+                        <p>点击 "View Detail" 展开该合同的明细数据：</p>
+                        <table>
+                            <tr><th>Month</th><th>Media</th><th>Country</th><th>Spend</th><th>Revenue</th><th>Rebate Ratio</th><th>Est Amount (USD)</th></tr>
+                            <tr><td>2026-06</td><td>Mintegral</td><td>IN</td><td>$5,000</td><td>$6,500</td><td>0.15</td><td class="amount-positive">$5,525.00</td></tr>
+                            <tr><td>2026-06</td><td>Unity</td><td>BR</td><td>$3,200</td><td>$4,100</td><td>0.10</td><td class="amount-positive">$3,690.00</td></tr>
+                            <tr><td>2026-06</td><td>Applovin</td><td>ID</td><td>$2,800</td><td>$3,500</td><td>0.12</td><td class="amount-positive">$3,080.00</td></tr>
+                        </table>
+
+                        <h4>6. 交互规则</h4>
+                        <table>
+                            <tr><th>交互</th><th>说明</th></tr>
+                            <tr><td>Checkbox Select</td><td>用户勾选要推送的合同，未勾选的不参与后续推送</td></tr>
+                            <tr><td>Proceed to Manual Adjust</td><td>仅勾选 Matched/Partial 的合同可进入 P5</td></tr>
+                            <tr><td>Export Excel</td><td>导出当前筛选结果为 Excel 文件</td></tr>
+                            <tr><td>Sort</td><td>点击表头可按该列排序（升序/降序）</td></tr>
+                        </table>
+
+                        <h4>7. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>All Unmatched</td><td>提示 "No matched contracts. Please check data and contract configuration"</td></tr>
+                            <tr><td>Rate Missing</td><td>标记为 "Rate Missing"，不参与金额计算，需返回 P3 配置汇率</td></tr>
+                            <tr><td>Zero Amount</td><td>显示 $0.00，标记为 "Zero Amount"，不阻止推送</td></tr>
+                        </table>
+                    </div>
                 </div>
+
+                <!-- P5: 手动调整页 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P5: Manual Adjust</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>用户可对 P4 中选中的预估结果进行手动调整。每个合同的预估金额可独立修改，修改需填写调整原因。已锁定（已推送财务）的月份不可调整。</p>
+
+                        <h4>2. 调整弹窗 UI</h4>
+                        <div class="prototype">
+                            <div class="prototype-title">P5: Manual Adjust Modal</div>
+                            <div class="proto-page" style="position:relative;min-height:400px">
+                                <div class="proto-header">
+                                    <span>Adjust Estimate - S003117 / 2026-06</span>
+                                    <span style="cursor:pointer;font-size:18px">x</span>
+                                </div>
+                                <div style="padding:20px 24px">
+                                    <div class="tip tip-info" style="margin-bottom:16px">
+                                        <span class="tip-icon">i</span>
+                                        <div>Adjusting estimate for contract <strong>S003117</strong>, Accrual Type: <strong>Revenue</strong></div>
+                                    </div>
+
+                                    <div class="proto-form-group">
+                                        <label class="proto-label">Contract Info</label>
+                                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
+                                            <div>Contract: <strong>S003117</strong></div>
+                                            <div>Account: <strong>624</strong></div>
+                                            <div>Currency: <strong>USD</strong></div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="margin:16px 0">
+
+                                    <div class="proto-form-group">
+                                        <label class="proto-label">System Estimate</label>
+                                        <div style="background:#f1f3f4;border-radius:6px;padding:12px;font-family:monospace;font-size:13px">
+                                            <div>System Estimate (USD): <strong>$12,295.00</strong></div>
+                                            <div style="font-size:12px;color:var(--gray);margin-top:4px">Calculation: Revenue x (1 - Rebate Ratio) x Rate</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="proto-form-group">
+                                        <label class="proto-label">Adjusted Amount (USD)</label>
+                                        <input class="proto-input" placeholder="Leave blank to use system estimate">
+                                    </div>
+
+                                    <div class="proto-form-group">
+                                        <label class="proto-label">Adjust Reason (Required if adjusting)</label>
+                                        <input class="proto-input" placeholder="e.g. Contract renegotiation, manual override per finance team request">
+                                    </div>
+
+                                    <div class="proto-form-group">
+                                        <label class="proto-label">Adjuster</label>
+                                        <input class="proto-input" value="Li Jiawei" disabled style="background:#f1f3f4">
+                                    </div>
+                                </div>
+                                <div style="padding:12px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+                                    <button class="proto-btn">Cancel</button>
+                                    <button class="proto-btn">Save Adjustment</button>
+                                    <button class="proto-btn proto-btn-primary">Confirm & Push to Finance</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>3. 调整字段说明</h4>
+                        <table>
+                            <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                            <tr><td>System Estimate</td><td>Read-only</td><td>-</td><td>系统计算的预估金额，不可修改，仅展示</td></tr>
+                            <tr><td>Adjusted Amount</td><td>Number Input</td><td>Conditionally</td><td>用户填入的调整后金额。留空则使用系统预估值</td></tr>
+                            <tr><td>Adjust Reason</td><td>Text Input</td><td>Yes (if adjusting)</td><td>若填入 Adjusted Amount，则必须填写调整原因</td></tr>
+                            <tr><td>Adjuster</td><td>Read-only</td><td>-</td><td>当前登录用户，自动填充</td></tr>
+                            <tr><td>Adjust Time</td><td>Read-only</td><td>-</td><td>保存时自动记录时间戳</td></tr>
+                        </table>
+
+                        <h4>4. 校验规则</h4>
+                        <table>
+                            <tr><th>规则</th><th>触发条件</th><th>提示信息</th></tr>
+                            <tr><td>Reason Required</td><td>Adjusted Amount 有值但 Adjust Reason 为空</td><td>"Adjust reason is required when modifying the amount"</td></tr>
+                            <tr><td>Invalid Amount</td><td>Adjusted Amount 不是有效数字</td><td>"Please enter a valid numeric amount"</td></tr>
+                            <tr><td>Negative Check</td><td>Adjusted Amount 为负数（仅 warning，不阻止）</td><td>"Negative amount detected, please confirm"</td></tr>
+                            <tr><td>Large Deviation</td><td>Adjusted Amount 与 System Estimate 偏差超过 50%</td><td>"Adjusted amount deviates significantly from system estimate. Please confirm"</td></tr>
+                            <tr><td>Locked Month</td><td>该月份已推送财务</td><td>"Month {YYYY-MM} is locked. No adjustments allowed"</td></tr>
+                        </table>
+
+                        <h4>5. 保存行为</h4>
+                        <table>
+                            <tr><th>操作</th><th>说明</th></tr>
+                            <tr><td>Save Adjustment</td><td>保存调整记录到数据库，状态变为 "Adjusted"。可继续调整其他合同</td></tr>
+                            <tr><td>Confirm & Push</td><td>保存调整记录后直接进入 P6 推送财务流程</td></tr>
+                            <tr><td>Cancel</td><td>放弃本次修改，关闭弹窗</td></tr>
+                        </table>
+
+                        <h4>6. 调整记录存储</h4>
+                        <div class="req-card">
+                            <h4>Adjust Record Schema</h4>
+                            <table>
+                                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                                <tr><td>adjust_id</td><td>UUID</td><td>Primary key</td></tr>
+                                <tr><td>task_id</td><td>UUID</td><td>Reference to accrual task</td></tr>
+                                <tr><td>contract_id</td><td>String</td><td>Contract ID</td></tr>
+                                <tr><td>accrual_type</td><td>Enum</td><td>Revenue / Cost / Rebate / Return / Claim</td></tr>
+                                <tr><td>system_amount</td><td>Decimal</td><td>System calculated amount (USD)</td></tr>
+                                <tr><td>adjusted_amount</td><td>Decimal</td><td>User adjusted amount (USD), null if not adjusted</td></tr>
+                                <tr><td>adjust_reason</td><td>Text</td><td>Reason for adjustment</td></tr>
+                                <tr><td>adjuster</td><td>String</td><td>Username of adjuster</td></tr>
+                                <tr><td>adjust_time</td><td>Timestamp</td><td>When the adjustment was saved</td></tr>
+                                <tr><td>status</td><td>Enum</td><td>Adjusted / Locked / Pushed</td></tr>
+                            </table>
+                        </div>
+
+                        <h4>7. 锁定规则</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>Pushed Month</td><td>已推送财务的月份，所有记录 status = "Locked"，Adjust 按钮置灰</td></tr>
+                            <tr><td>Partially Pushed</td><td>若部分合同已推送，已推送的记录锁定，未推送的仍可调整</td></tr>
+                            <tr><td>Re-adjust After Push</td><td>不允许。需先撤回推送（运维操作），再重新调整推送</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- P6: 推送财务 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P6: Push to Finance</span>
+                        <span class="tag tag-priority">P0</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>用户确认预估结果后，一键推送到财务系统。推送前执行预校验，推送后锁定对应月份。</p>
+
+                        <h4>2. 推送前校验（Pre-push Validation）</h4>
+                        <table>
+                            <tr><th>校验项</th><th>校验内容</th><th>失败处理</th></tr>
+                            <tr><td>Contract Matched</td><td>所有选中合同均已匹配</td><td>列出未匹配合同，阻止推送</td></tr>
+                            <tr><td>Exchange Rate Configured</td><td>所有涉及币种的汇率已配置</td><td>列出缺失汇率的币种，阻止推送</td></tr>
+                            <tr><td>Estimate Amount &gt; 0</td><td>预估金额不为零或负数（负数需额外确认）</td><td>提示 "Zero or negative amount detected"</td></tr>
+                            <tr><td>Month Not Locked</td><td>目标月份未被锁定</td><td>提示 "Month {YYYY-MM} is already locked"</td></tr>
+                            <tr><td>Adjust Reason Complete</td><td>所有有调整的记录均已填写原因</td><td>列出缺失原因的记录</td></tr>
+                        </table>
+
+                        <h4>3. 推送 API 调用</h4>
+                        <div class="req-card">
+                            <h4>Finance API Request</h4>
+                            <table>
+                                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                                <tr><td>contract_id</td><td>String</td><td>CRM 合同编号</td></tr>
+                                <tr><td>accrual_month</td><td>String</td><td>计提月份 YYYY-MM</td></tr>
+                                <tr><td>accrual_type</td><td>Enum</td><td>Revenue / Cost / Rebate / Return / Claim</td></tr>
+                                <tr><td>est_amount_usd</td><td>Decimal</td><td>预估金额（USD），含调整后金额</td></tr>
+                                <tr><td>original_currency</td><td>String</td><td>原始币种</td></tr>
+                                <tr><td>original_amount</td><td>Decimal</td><td>原始币种金额</td></tr>
+                                <tr><td>exchange_rate</td><td>Decimal</td><td>使用的汇率</td></tr>
+                                <tr><td>push_user</td><td>String</td><td>推送人用户名</td></tr>
+                                <tr><td>push_time</td><td>Timestamp</td><td>推送时间</td></tr>
+                                <tr><td>task_id</td><td>UUID</td><td>计提任务 ID</td></tr>
+                            </table>
+                        </div>
+
+                        <h4>4. 成功/失败处理</h4>
+                        <table>
+                            <tr><th>结果</th><th>处理方式</th></tr>
+                            <tr><td><span style="color:var(--success)">Push Success</span></td><td>记录 status = "Pushed"，该月份标记为 "Locked"，不可再调整</td></tr>
+                            <tr><td><span style="color:var(--warning)">Push Failed</span></td><td>记录 status = "Push Failed"，保留调整数据，支持重试</td></tr>
+                            <tr><td><span style="color:var(--gray)">Partial Success</span></td><td>部分合同推送成功，部分失败。成功的锁定，失败的可重试</td></tr>
+                        </table>
+
+                        <h4>5. 月份锁定规则</h4>
+                        <table>
+                            <tr><th>场景</th><th>锁定行为</th></tr>
+                            <tr><td>All Contracts Pushed</td><td>该月份整体标记为 "Locked"，所有该月份的记录不可调整</td></tr>
+                            <tr><td>Partial Push</td><td>已推送的合同锁定，未推送的合同仍可调整和推送</td></tr>
+                            <tr><td>Lock Release</td><td>仅通过运维接口可释放锁定（需审批）</td></tr>
+                        </table>
+
+                        <h4>6. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>Finance API Timeout</td><td>记录状态为 "Timeout"，5 分钟后自动重试一次</td></tr>
+                            <tr><td>Duplicate Push</td><td>同一 contract_id + month + type 不可重复推送，提示 "Already pushed"</td></tr>
+                            <tr><td>Concurrent Push</td><td>使用乐观锁，推送时检查记录版本号，版本不一致则提示 "Data modified, please refresh"</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- P7: 推送记录 -->
+                <div class="page-section">
+                    <div class="page-section-header">
+                        <span>P7: Push History</span>
+                        <span class="tag tag-priority">P1</span>
+                    </div>
+                    <div class="page-section-body">
+
+                        <h4>1. 页面概述</h4>
+                        <p>展示历史推送财务的记录。支持按状态、月份、合同 ID 等条件筛选，支持对失败记录重新推送。</p>
+
+                        <h4>2. 历史表格布局</h4>
+                        <table>
+                            <tr><th>Push Time</th><th>Contract ID</th><th>Account ID</th><th>Accrual Type</th><th>Accrual Month</th><th>Amount (USD)</th><th>Push User</th><th>Status</th><th>Action</th></tr>
+                            <tr>
+                                <td>2026-06-04 14:30</td>
+                                <td>S001739</td>
+                                <td>54</td>
+                                <td>Revenue</td>
+                                <td>2026-05</td>
+                                <td class="amount-positive">$3,210.00</td>
+                                <td>Li Jiawei</td>
+                                <td><span class="proto-status proto-status-ok">Pushed</span></td>
+                                <td><a href="#" style="color:var(--primary);font-size:12px">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>2026-06-04 14:28</td>
+                                <td>S002815</td>
+                                <td>624(new)</td>
+                                <td>Revenue</td>
+                                <td>2026-05</td>
+                                <td class="amount-positive">$5,678.90</td>
+                                <td>Li Jiawei</td>
+                                <td><span class="proto-status proto-status-ok">Pushed</span></td>
+                                <td><a href="#" style="color:var(--primary);font-size:12px">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>2026-06-04 14:25</td>
+                                <td>S004174</td>
+                                <td>11</td>
+                                <td>Cost</td>
+                                <td>2026-05</td>
+                                <td class="amount-negative">-$890.00</td>
+                                <td>Zhang San</td>
+                                <td><span class="proto-status proto-status-error">Failed</span></td>
+                                <td><a href="#" style="color:var(--warning);font-size:12px">Retry</a></td>
+                            </tr>
+                        </table>
+
+                        <h4>3. 筛选条件</h4>
+                        <table>
+                            <tr><th>筛选字段</th><th>类型</th><th>说明</th></tr>
+                            <tr><td>Status</td><td>Dropdown</td><td>All / Pushed / Failed / Timeout</td></tr>
+                            <tr><td>Accrual Month</td><td>Month Picker</td><td>按计提月份筛选</td></tr>
+                            <tr><td>Contract ID</td><td>Text Input</td><td>精确搜索</td></tr>
+                            <tr><td>Accrual Type</td><td>Dropdown</td><td>Revenue / Cost / Rebate / Return / Claim</td></tr>
+                            <tr><td>Push User</td><td>Dropdown</td><td>按推送人筛选</td></tr>
+                        </table>
+
+                        <h4>4. 重新推送（Re-push）</h4>
+                        <table>
+                            <tr><th>操作</th><th>说明</th></tr>
+                            <tr><td>Retry Single</td><td>点击失败记录的 "Retry" 按钮，仅重新推送该条记录</td></tr>
+                            <tr><td>Retry Batch</td><td>勾选多条失败记录，点击 "Retry Selected" 批量重推</td></tr>
+                            <tr><td>Retry Validation</td><td>重推前重新执行 Pre-push Validation，确保数据仍然有效</td></tr>
+                            <tr><td>Retry Lock</td><td>重推成功后同样锁定月份</td></tr>
+                        </table>
+
+                        <h4>5. 边界处理</h4>
+                        <table>
+                            <tr><th>场景</th><th>处理方式</th></tr>
+                            <tr><td>Record Not Found</td><td>提示 "Push record not found, it may have been deleted"</td></tr>
+                            <tr><td>Data Changed Since Push</td><td>重推时发现原始数据已变更，提示 "Source data has changed. Please re-run accrual"</td></tr>
+                            <tr><td>Export</td><td>支持导出当前筛选结果为 Excel，包含所有字段</td></tr>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- ========== 核心流程 ========== -->
+        <!-- ========== Tab 5: 核心流程图 ========== -->
         <div id="flow" class="tab-content">
             <div class="card">
-                <h2>4. 核心流程</h2>
+                <h2>5. Core Flow Diagrams</h2>
 
-                <h3>4.1 Full Accrual Flow</h3>
+                <h3>5.1 Full Accrual Flow</h3>
                 <div class="mermaid">
 graph TD
     subgraph DataFlow ["Data Team"]
         A1["Daily Consumption Data"] --> A2["Media / Country Replace"]
-        A2 --> A3["MSA Split + Rebate"]
-        A3 --> A4["Output Base Data: Country x Media x Account x Day"]
+        A2 --> A3["Business Line Tagging"]
+        A3 --> A4["MSA Split + Rebate"]
+        A4 --> A5["Output Base Data"]
     end
 
     subgraph PlatformFlow ["Platform Team"]
-        B1["Receive Base Data"] --> B2["Contract Match: account_id -> contract_id"]
-        B2 --> B3{"Match OK?"}
-        B3 -->|Yes| B4["Exchange Rate: non-USD -> USD"]
-        B3 -->|No| B5["Mark Unmatched, Skip"]
-        B4 --> B6["Estimate Calc by Business Formula"]
-        B6 --> B7["Result List: Contract x Month x Amount"]
+        B1["P1: Select Accrual Type + Business Line + Person"] --> B2["P2: Filter Contracts by Accrual Person"]
+        B2 --> B3["P2: Pull Base Data by Business Line"]
+        B3 --> B4{"All Matched?"}
+        B4 -->|Yes| B5["P3: Confirm Formula and Exchange Rate"]
+        B4 -->|No| B6["Flag Unmatched, Continue with Matched"]
+        B6 --> B5
+        B5 --> B7["P4: Calculate Estimate Results"]
         B7 --> B8{"Need Adjust?"}
-        B8 -->|No| B9["Confirm Push"]
-        B8 -->|Yes| B10["Manual Adjust Amount"]
+        B8 -->|No| B9["P6: Pre-push Validation"]
+        B8 -->|Yes| B10["P5: Manual Adjust Amount"]
         B10 --> B11["Save Adjust Record"]
         B11 --> B9
-        B9 --> B12["Push to Finance System"]
-        B12 --> B13["Status = Pushed, Month Locked"]
+        B9 --> B12["P6: Push to Finance System"]
+        B12 --> B13{"Push Result"}
+        B13 -->|OK| B14["Status = Pushed, Month Locked"]
+        B13 -->|Fail| B15["Mark Failed, Support Retry"]
+        B14 --> B16["P7: Record in Push History"]
     end
 
-    A4 --> B1
+    A5 --> B1
 
     style DataFlow fill:#fef7e0,stroke:#f9ab00
     style PlatformFlow fill:#e8f0fe,stroke:#1a73e8
                 </div>
 
-                <h3>4.2 Contract Match Flow</h3>
+                <h3>5.2 Contract Match Flow</h3>
                 <div class="mermaid">
 flowchart TD
-    Start["Receive Base Data"] --> Query["Query CRM Contract Table WHERE account_id = ?"]
-    Query --> Found{"Found?"}
-    Found -->|Yes| Bind["Bind Contract ID, Read Currency / Settlement"]
-    Bind --> CheckFlag{"Accrual Needed?"}
-    CheckFlag -->|Yes| Pass["Go to Exchange Rate"]
-    CheckFlag -->|No| Skip["Mark: No Accrual"]
-    Found -->|No| NoMatch["Mark: Unmatched Contract"]
+    Start["Receive Base Data + Selection"] --> Q1["Query: Filter by Accrual Person"]
+    Q1 --> Q2["Filter by Business Line"]
+    Q2 --> Q3["Filter by Contract Validity Date"]
+    Q3 --> Q4["Optional: Filter by Contract ID / DSP Level"]
+    Q4 --> Match{"account_id matches CRM?"}
+    Match -->|Yes| Bind["Bind Contract: Read Currency / Settlement / Type"]
+    Bind --> CheckExpired{"Contract Expired?"}
+    CheckExpired -->|No| GoRate["Go to Exchange Rate"]
+    CheckExpired -->|Yes| Expired["Mark: Contract Expired"]
+    Match -->|No| NoMatch["Mark: Unmatched Contract"]
 
     style Start fill:#e8f0fe,stroke:#1a73e8
-    style Pass fill:#e6f4ea,stroke:#34a853
-    style Skip fill:#fef7e0,stroke:#f9ab00
+    style GoRate fill:#e6f4ea,stroke:#34a853
+    style Expired fill:#fef7e0,stroke:#f9ab00
     style NoMatch fill:#fce8e6,stroke:#ea4335
                 </div>
 
-                <h3>4.3 Estimate Calculation Flow</h3>
+                <h3>5.3 Estimation Flow</h3>
                 <div class="mermaid">
 flowchart TD
-    Input["Contract x Month x Base Data"] --> LoadFormula["Load Business Line Formula"]
-    LoadFormula --> CalcType{"Contract Type?"}
-    CalcType -->|Revenue| RevCalc["Est Revenue = Revenue x (1-Rebate) x Rate"]
-    CalcType -->|Cost| CostCalc["Est Cost = Spend x CostRatio x Rate"]
+    Input["Contract x Month x Base Data"] --> LoadFormula["Load Formula by Type + BusinessLine"]
+    LoadFormula --> CheckType{"Accrual Type?"}
+    CheckType -->|Revenue| RevCalc["Est = Revenue x (1-Rebate) x Rate"]
+    CheckType -->|Cost| CostCalc["Est = Spend x CostRatio x Rate"]
+    CheckType -->|Rebate| RebCalc["Est = Revenue x RebateRatio x Rate"]
+    CheckType -->|Return| RetCalc["Est = ReturnAmt x Rate"]
+    CheckType -->|Claim| ClmCalc["Est = ClaimAmt x Rate"]
     RevCalc --> Merge["Aggregate to Contract x Month"]
     CostCalc --> Merge
-    Merge --> Result["Output: Est Revenue / Est Cost / Est Profit"]
+    RebCalc --> Merge
+    RetCalc --> Merge
+    ClmCalc --> Merge
+    Merge --> Result["Output: Estimate Result Table"]
 
     style Input fill:#e8f0fe,stroke:#1a73e8
     style Result fill:#e6f4ea,stroke:#34a853
                 </div>
 
-                <h3>4.4 Manual Adjust and Push Flow</h3>
+                <h3>5.4 Adjust and Push Flow</h3>
                 <div class="mermaid">
 flowchart TD
     Show["Show Estimate Result List"] --> UserCheck{"Adjust?"}
-    UserCheck -->|No| Confirm["Click Confirm Push"]
-    UserCheck -->|Yes| Edit["Edit Estimate Amount"]
-    Edit --> Reason["Fill Adjust Reason"]
-    Reason --> Save["Save Adjust Record"]
-    Save --> Confirm
-    Confirm --> PreCheck{"Pre-push Validation"}
-    PreCheck -->|Pass| Push["Call Finance API"]
-    PreCheck -->|Fail| Block["Show Missing: Contract / Rate / Amount"]
+    UserCheck -->|No| PreCheck["Pre-push Validation"]
+    UserCheck -->|Yes| Edit["Open Adjust Modal"]
+    Edit --> InputAmt["Input Adjusted Amount"]
+    InputAmt --> InputReason["Input Adjust Reason"]
+    InputReason --> Save["Save Adjust Record"]
+    Save --> PreCheck
+    PreCheck --> CheckContract{"Contract Matched?"}
+    CheckContract -->|No| Block["Block: Show Unmatched"]
+    CheckContract -->|Yes| CheckRate{"Rate Configured?"}
+    CheckRate -->|No| BlockRate["Block: Show Missing Rate"]
+    CheckRate -->|Yes| CheckMonth{"Month Locked?"}
+    CheckMonth -->|Yes| BlockMonth["Block: Month Locked"]
+    CheckMonth -->|No| Push["Call Finance API"]
     Push --> PushResult{"Push Result"}
     PushResult -->|OK| Done["Status = Pushed, Month Locked"]
     PushResult -->|Fail| Retry["Mark Failed, Support Retry"]
@@ -603,437 +1491,156 @@ flowchart TD
     style Show fill:#e8f0fe,stroke:#1a73e8
     style Done fill:#e6f4ea,stroke:#34a853
     style Block fill:#fce8e6,stroke:#ea4335
+    style BlockRate fill:#fce8e6,stroke:#ea4335
+    style BlockMonth fill:#fef7e0,stroke:#f9ab00
     style Retry fill:#fef7e0,stroke:#f9ab00
                 </div>
             </div>
         </div>
 
-        <!-- ========== 原型图 ========== -->
+        <!-- ========== Tab 6: 原型图 ========== -->
         <div id="proto" class="tab-content">
             <div class="card">
-                <h2>5. 原型图</h2>
+                <h2>6. Prototypes Overview</h2>
+                <p>以下为各页面原型概览。完整高保真原型请参见单独的原型文件。</p>
 
-                <!-- 原型1: 计提总览页 -->
-                <h3>5.1 计提总览页</h3>
-                <div class="prototype">
-                    <div class="prototype-title">计提总览 — 按月份查看预估结果</div>
-                    <div class="proto-page">
-                        <div class="proto-header">
-                            <span>计提管理</span>
-                            <span style="font-size:12px;opacity:0.8">计提平台 v2.0</span>
-                        </div>
-                        <div class="proto-layout">
-                            <div class="proto-sidebar">
-                                <div class="proto-sidebar-item active">计提总览</div>
-                                <div class="proto-sidebar-item">合同管理</div>
-                                <div class="proto-sidebar-item">汇率配置</div>
-                                <div class="proto-sidebar-item">公式配置</div>
-                                <div class="proto-sidebar-item">推送记录</div>
-                            </div>
-                            <div class="proto-main">
-                                <div class="proto-toolbar">
-                                    <select class="proto-input" style="width:120px">
-                                        <option>2026-06</option>
-                                        <option>2026-05</option>
-                                        <option>2026-04</option>
-                                    </select>
-                                    <select class="proto-input" style="width:140px">
-                                        <option>全部状态</option>
-                                        <option>待确认</option>
-                                        <option>已确认</option>
-                                        <option>已推送</option>
-                                    </select>
-                                    <button class="proto-btn proto-btn-primary">同步合同数据</button>
-                                    <button class="proto-btn">导出 Excel</button>
-                                </div>
-                                <table class="proto-table">
-                                    <thead>
-                                        <tr>
-                                            <th>合同ID</th>
-                                            <th>账户ID</th>
-                                            <th>业务线</th>
-                                            <th>币种</th>
-                                            <th>预估收入(USD)</th>
-                                            <th>预估成本(USD)</th>
-                                            <th>预估利润(USD)</th>
-                                            <th>状态</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>S003117</td>
-                                            <td>624</td>
-                                            <td>广告-miads</td>
-                                            <td>USD</td>
-                                            <td class="amount-positive">$12,345.67</td>
-                                            <td>$8,234.56</td>
-                                            <td class="amount-positive">$4,111.11</td>
-                                            <td><span class="proto-status proto-status-pending">待确认</span></td>
-                                            <td><a href="#" style="color:var(--primary);font-size:12px">查看/调整</a></td>
-                                        </tr>
-                                        <tr>
-                                            <td>S002815</td>
-                                            <td>624(新米)</td>
-                                            <td>广告-miads</td>
-                                            <td>USD</td>
-                                            <td class="amount-positive">$5,678.90</td>
-                                            <td>$3,456.78</td>
-                                            <td class="amount-positive">$2,222.12</td>
-                                            <td><span class="proto-status proto-status-ok">已确认</span></td>
-                                            <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
-                                        </tr>
-                                        <tr>
-                                            <td>S001739</td>
-                                            <td>54</td>
-                                            <td>广告-miads</td>
-                                            <td>USD</td>
-                                            <td class="amount-positive">$3,210.00</td>
-                                            <td>$2,100.00</td>
-                                            <td class="amount-positive">$1,110.00</td>
-                                            <td><span class="proto-status proto-status-ok">已推送</span></td>
-                                            <td><span style="color:var(--gray);font-size:12px">已锁定</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>未匹配</td>
-                                            <td>9999</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td class="amount-zero">-</td>
-                                            <td class="amount-zero">-</td>
-                                            <td class="amount-zero">-</td>
-                                            <td><span class="proto-status proto-status-error">未匹配</span></td>
-                                            <td><span style="color:var(--gray);font-size:12px">需补合同</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
-                                    <span style="font-size:13px;color:var(--gray)">共 4 条 | 预估总收入: $21,234.57 | 预估总成本: $13,791.34</span>
-                                    <div style="display:flex;gap:8px">
-                                        <button class="proto-btn proto-btn-primary">一键推送全部已确认</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="tip tip-info">
+                    <span class="tip-icon">i</span>
+                    <div><strong>Prototype Notes:</strong> The prototypes below show the layout and key components for each page. Interactive prototypes with full data are maintained separately.</div>
                 </div>
 
-                <!-- 原型2: 预估调整弹窗 -->
-                <h3>5.2 预估调整弹窗</h3>
+                <h3>6.1 P1: Accrual Selection Page</h3>
                 <div class="prototype">
-                    <div class="prototype-title">点击"查看/调整"后弹出</div>
-                    <div class="proto-page" style="position:relative;min-height:400px">
+                    <div class="prototype-title">Entry point - user selects type, business line, person, date</div>
+                    <div class="proto-page">
                         <div class="proto-header">
-                            <span>预估结果详情 — S003117 / 2026-06</span>
-                            <span style="cursor:pointer;font-size:18px">✕</span>
+                            <span>Accrual Selection</span>
                         </div>
                         <div style="padding:20px 24px">
-                            <div class="tip tip-info" style="margin-bottom:16px">
-                                <span class="tip-icon">💲</span>
-                                <div>将为账户 <strong>624</strong> 推送预估收入 <strong class="amount-positive">$12,345.67</strong> 到财务系统</div>
+                            <p style="color:var(--gray);font-size:13px;margin-bottom:16px">Form with multi-select checkboxes for Accrual Type and Business Line, dropdown for Accrual Person, month picker, and optional filters (Contract ID, DSP Level 1/2). See P1 section in Tab 4 for full detail.</p>
+                            <div style="text-align:center;padding:20px">
+                                <button class="proto-btn proto-btn-primary" style="padding:10px 32px;font-size:14px">Start Accrual</button>
                             </div>
-
-                            <div class="proto-form-group">
-                                <label class="proto-label">合同信息</label>
-                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
-                                    <div>合同ID: <strong>S003117</strong></div>
-                                    <div>账户ID: <strong>624</strong></div>
-                                    <div>币种: <strong>USD</strong></div>
-                                </div>
-                            </div>
-
-                            <hr style="margin:16px 0">
-
-                            <div class="proto-form-group">
-                                <label class="proto-label">计提数据明细</label>
-                                <table class="proto-table">
-                                    <thead>
-                                        <tr>
-                                            <th>月份</th>
-                                            <th>媒体</th>
-                                            <th>国家</th>
-                                            <th>消耗</th>
-                                            <th>收入</th>
-                                            <th>返点系数</th>
-                                            <th>预估收入(USD)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>2026-06</td>
-                                            <td>Mintegral</td>
-                                            <td>IN</td>
-                                            <td>$5,000</td>
-                                            <td>$6,500</td>
-                                            <td>0.15</td>
-                                            <td class="amount-positive">$5,525.00</td>
-                                        </tr>
-                                        <tr>
-                                            <td>2026-06</td>
-                                            <td>Unity</td>
-                                            <td>BR</td>
-                                            <td>$3,200</td>
-                                            <td>$4,100</td>
-                                            <td>0.10</td>
-                                            <td class="amount-positive">$3,690.00</td>
-                                        </tr>
-                                        <tr>
-                                            <td>2026-06</td>
-                                            <td>Applovin</td>
-                                            <td>ID</td>
-                                            <td>$2,800</td>
-                                            <td>$3,500</td>
-                                            <td>0.12</td>
-                                            <td class="amount-positive">$3,080.00</td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style="font-weight:600;background:#f1f3f4">
-                                            <td colspan="6" style="text-align:right">预估收入合计</td>
-                                            <td class="amount-positive">$12,295.00</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <hr style="margin:16px 0">
-
-                            <div class="proto-form-group">
-                                <label class="proto-label">手动调整（可选）</label>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-                                    <div>
-                                        <label class="proto-label" style="font-weight:normal;color:var(--gray)">系统预估收入</label>
-                                        <input class="proto-input" value="$12,295.00" disabled style="background:#f1f3f4">
-                                    </div>
-                                    <div>
-                                        <label class="proto-label" style="font-weight:normal;color:var(--gray)">调整后收入（USD）</label>
-                                        <input class="proto-input" value="" placeholder="留空则使用系统预估值">
-                                    </div>
-                                </div>
-                                <div style="margin-top:10px">
-                                    <label class="proto-label" style="font-weight:normal;color:var(--gray)">调整原因</label>
-                                    <input class="proto-input" placeholder="如需调整，请填写原因">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="proto-modal-footer">
-                            <button class="proto-btn">取消</button>
-                            <button class="proto-btn">保存调整</button>
-                            <button class="proto-btn proto-btn-primary">确认推送财务</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- 原型3: 合同管理页 -->
-                <h3>5.3 合同管理页</h3>
+                <h3>6.2 P2: Contract Match & Data Pull</h3>
                 <div class="prototype">
-                    <div class="prototype-title">合同管理 — 从CRM同步的合同信息</div>
+                    <div class="prototype-title">Auto-matching progress + matched/unmatched statistics</div>
                     <div class="proto-page">
                         <div class="proto-header">
-                            <span>合同管理</span>
-                        </div>
-                        <div class="proto-toolbar">
-                            <input class="proto-input" style="width:200px" placeholder="搜索合同ID/账户ID">
-                            <select class="proto-input" style="width:120px">
-                                <option>全部状态</option>
-                                <option>已匹配</option>
-                                <option>未匹配</option>
-                            </select>
-                            <button class="proto-btn proto-btn-primary">从CRM同步</button>
-                            <button class="proto-btn">导出</button>
-                        </div>
-                        <table class="proto-table">
-                            <thead>
-                                <tr>
-                                    <th>合同ID</th>
-                                    <th>账户ID</th>
-                                    <th>客户名称</th>
-                                    <th>币种</th>
-                                    <th>结算方式</th>
-                                    <th>计提标记</th>
-                                    <th>最近同步时间</th>
-                                    <th>状态</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>S003117</td>
-                                    <td>624</td>
-                                    <td>小米东风</td>
-                                    <td>USD</td>
-                                    <td>月结</td>
-                                    <td>✅ 需要计提</td>
-                                    <td>2026-06-04 10:00</td>
-                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
-                                </tr>
-                                <tr>
-                                    <td>S002815</td>
-                                    <td>624(新米)</td>
-                                    <td>小米东风</td>
-                                    <td>USD</td>
-                                    <td>月结</td>
-                                    <td>✅ 需要计提</td>
-                                    <td>2026-06-04 10:00</td>
-                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
-                                </tr>
-                                <tr>
-                                    <td>S001739</td>
-                                    <td>54</td>
-                                    <td>RTA拉活</td>
-                                    <td>USD</td>
-                                    <td>月结</td>
-                                    <td>✅ 需要计提</td>
-                                    <td>2026-06-04 10:00</td>
-                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
-                                </tr>
-                                <tr>
-                                    <td>S001740</td>
-                                    <td>54(RTA拉新)</td>
-                                    <td>RTA拉新</td>
-                                    <td>USD</td>
-                                    <td>月结</td>
-                                    <td>✅ 需要计提</td>
-                                    <td>2026-06-04 10:00</td>
-                                    <td><span class="proto-status proto-status-ok">已匹配</span></td>
-                                </tr>
-                                <tr>
-                                    <td>未匹配</td>
-                                    <td>9999</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>❌ 无合同</td>
-                                    <td>-</td>
-                                    <td><span class="proto-status proto-status-error">未匹配</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- 原型4: 公式配置页 -->
-                <h3>5.4 公式配置页</h3>
-                <div class="prototype">
-                    <div class="prototype-title">公式配置 — 按业务线配置预估计算公式</div>
-                    <div class="proto-page">
-                        <div class="proto-header">
-                            <span>公式配置</span>
+                            <span>Contract Match Progress</span>
                         </div>
                         <div style="padding:20px 24px">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                                <span style="font-size:14px;color:var(--gray)">每个业务线可独立配置预估收入/成本的计算公式</span>
-                                <button class="proto-btn proto-btn-primary">+ 新增业务线公式</button>
-                            </div>
-
-                            <!-- 公式卡片1 -->
-                            <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                                    <div>
-                                        <strong style="font-size:15px">广告-miads</strong>
-                                        <span class="proto-status proto-status-ok" style="margin-left:8px">启用中</span>
-                                    </div>
-                                    <div style="display:flex;gap:6px">
-                                        <button class="proto-btn" style="font-size:12px">编辑</button>
-                                        <button class="proto-btn" style="font-size:12px;color:var(--warning)">停用</button>
-                                    </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;text-align:center;margin-bottom:20px">
+                                <div style="background:var(--success-light);padding:16px;border-radius:8px">
+                                    <div style="font-size:24px;font-weight:700;color:var(--success)">42</div>
+                                    <div style="font-size:12px;color:var(--gray)">Matched</div>
                                 </div>
-                                <div style="background:#f8f9fa;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;line-height:2">
-                                    <div><strong>预估收入</strong> = 收入金额 × (1 - 返点系数) × 汇率</div>
-                                    <div><strong>预估成本</strong> = 消耗金额 × 成本系数 × 汇率</div>
-                                    <div><strong>预估利润</strong> = 预估收入 - 预估成本</div>
+                                <div style="background:var(--orange-light);padding:16px;border-radius:8px">
+                                    <div style="font-size:24px;font-weight:700;color:#e37400">5</div>
+                                    <div style="font-size:12px;color:var(--gray)">Partial</div>
                                 </div>
-                                <div style="margin-top:8px;font-size:12px;color:var(--gray)">
-                                    适用账户：624, 54, 6208, ... | 汇率来源：平台汇率配置 | 更新时间：2026-06-01
+                                <div style="background:var(--warning-light);padding:16px;border-radius:8px">
+                                    <div style="font-size:24px;font-weight:700;color:var(--warning)">3</div>
+                                    <div style="font-size:12px;color:var(--gray)">Unmatched</div>
+                                </div>
+                                <div style="background:var(--purple-light);padding:16px;border-radius:8px">
+                                    <div style="font-size:24px;font-weight:700;color:var(--purple)">2</div>
+                                    <div style="font-size:12px;color:var(--gray)">Rate Missing</div>
                                 </div>
                             </div>
+                            <div class="proto-progress">
+                                <div class="proto-progress-bar" style="width:84%"></div>
+                            </div>
+                            <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--gray)">84% Matched (42/52 contracts)</div>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- 公式卡片2 -->
-                            <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                                    <div>
-                                        <strong style="font-size:15px">offline</strong>
-                                        <span class="proto-status proto-status-ok" style="margin-left:8px">启用中</span>
-                                    </div>
-                                    <div style="display:flex;gap:6px">
-                                        <button class="proto-btn" style="font-size:12px">编辑</button>
-                                        <button class="proto-btn" style="font-size:12px;color:var(--warning)">停用</button>
-                                    </div>
+                <h3>6.3 P3: Formula & Rate Config</h3>
+                <div class="prototype">
+                    <div class="prototype-title">Formula cards + exchange rate table</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>Formula & Exchange Rate Config</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <div style="background:#f8f9fa;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;line-height:2;margin-bottom:16px">
+                                <div><strong>Revenue (MIAds):</strong> Est = Revenue x (1 - Rebate Ratio) x Rate</div>
+                                <div><strong>Cost (MIAds):</strong> Est = Spend x Cost Ratio x Rate</div>
+                            </div>
+                            <p style="font-size:13px;color:var(--gray)">Exchange rates auto-populated from platform config. Missing rates highlighted in red. See P3 section in Tab 4 for full detail.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>6.4 P4: Estimate Results</h3>
+                <div class="prototype">
+                    <div class="prototype-title">Result table with checkbox selection and summary stats</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>Estimate Results - 2026-06</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <p style="font-size:13px;color:var(--gray)">Sortable table with columns: Contract ID, Account, Business Line, Accrual Type, Currency, Est Amount, Status. Checkbox selection for batch operations. See P4 section in Tab 4 for full detail.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>6.5 P5: Manual Adjust</h3>
+                <div class="prototype">
+                    <div class="prototype-title">Edit modal with system estimate, adjusted amount, reason field</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>Manual Adjust Modal</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <p style="font-size:13px;color:var(--gray)">Modal dialog with read-only system estimate, editable adjusted amount, required adjust reason, and confirm/cancel buttons. See P5 section in Tab 4 for full detail.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>6.6 P6: Push to Finance</h3>
+                <div class="prototype">
+                    <div class="prototype-title">Pre-push validation checklist + push button</div>
+                    <div class="proto-page">
+                        <div class="proto-header">
+                            <span>Push to Finance</span>
+                        </div>
+                        <div style="padding:20px 24px">
+                            <div style="margin-bottom:16px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px">
+                                    <span style="color:var(--success)">&#10003;</span> All contracts matched
                                 </div>
-                                <div style="background:#f8f9fa;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;line-height:2">
-                                    <div><strong>预估收入</strong> = 消耗金额 × 分成比例 × 汇率</div>
-                                    <div><strong>预估成本</strong> = 消耗金额 × 汇率</div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px">
+                                    <span style="color:var(--success)">&#10003;</span> All exchange rates configured
                                 </div>
-                                <div style="margin-top:8px;font-size:12px;color:var(--gray)">
-                                    适用账户：all offline | 汇率来源：平台汇率配置 | 更新时间：2026-05-20
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px">
+                                    <span style="color:var(--success)">&#10003;</span> Month not locked
                                 </div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px">
+                                    <span style="color:var(--success)">&#10003;</span> All adjust reasons complete
+                                </div>
+                            </div>
+                            <div style="text-align:center">
+                                <button class="proto-btn proto-btn-primary" style="padding:10px 32px;font-size:14px">Confirm Push to Finance</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 原型5: 推送记录页 -->
-                <h3>5.5 推送记录页</h3>
+                <h3>6.7 P7: Push History</h3>
                 <div class="prototype">
-                    <div class="prototype-title">推送记录 — 历史推送财务记录</div>
+                    <div class="prototype-title">History table with filter, search, and retry actions</div>
                     <div class="proto-page">
                         <div class="proto-header">
-                            <span>推送记录</span>
+                            <span>Push History</span>
                         </div>
-                        <div class="proto-toolbar">
-                            <select class="proto-input" style="width:120px">
-                                <option>全部状态</option>
-                                <option>成功</option>
-                                <option>失败</option>
-                            </select>
-                            <input class="proto-input" style="width:140px" type="month" value="2026-06">
-                            <button class="proto-btn">导出</button>
+                        <div style="padding:20px 24px">
+                            <p style="font-size:13px;color:var(--gray)">Filterable table with push time, contract ID, account, accrual type, month, amount, push user, status, and action (View / Retry). See P7 section in Tab 4 for full detail.</p>
                         </div>
-                        <table class="proto-table">
-                            <thead>
-                                <tr>
-                                    <th>推送时间</th>
-                                    <th>合同ID</th>
-                                    <th>账户ID</th>
-                                    <th>计提月份</th>
-                                    <th>预估收入(USD)</th>
-                                    <th>推送人</th>
-                                    <th>状态</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>2026-06-04 14:30</td>
-                                    <td>S001739</td>
-                                    <td>54</td>
-                                    <td>2026-05</td>
-                                    <td class="amount-positive">$3,210.00</td>
-                                    <td>张三</td>
-                                    <td><span class="proto-status proto-status-ok">推送成功</span></td>
-                                    <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
-                                </tr>
-                                <tr>
-                                    <td>2026-06-04 14:28</td>
-                                    <td>S002815</td>
-                                    <td>624(新米)</td>
-                                    <td>2026-05</td>
-                                    <td class="amount-positive">$5,678.90</td>
-                                    <td>张三</td>
-                                    <td><span class="proto-status proto-status-ok">推送成功</span></td>
-                                    <td><a href="#" style="color:var(--primary);font-size:12px">查看</a></td>
-                                </tr>
-                                <tr>
-                                    <td>2026-06-04 14:25</td>
-                                    <td>S004174</td>
-                                    <td>11</td>
-                                    <td>2026-05</td>
-                                    <td class="amount-negative">-$890.00</td>
-                                    <td>张三</td>
-                                    <td><span class="proto-status proto-status-error">推送失败</span></td>
-                                    <td><a href="#" style="color:var(--warning);font-size:12px">重试</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
